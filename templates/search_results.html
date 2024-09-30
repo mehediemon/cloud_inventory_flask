@@ -1,0 +1,79 @@
+{% extends 'base.html' %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+    <h2>Search Results for "{{ query }}"</h2>
+
+    <h3>Accounts</h3>
+    {% if accounts %}
+        <ul class="list-group">
+            {% for account in accounts %}
+                <li class="list-group-item rounded-0">
+                    <strong>Account Name:</strong> {{ account.name }}<br>
+                    <strong>Account ID:</strong> {{ account.account_id }}<br>
+                    <strong>Regions:</strong>
+                    <ul>
+                        {% for region in account.regions %}
+                            <li>{{ region.name }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No accounts found.</p>
+    {% endif %}
+
+    <h3>Regions</h3>
+    {% if regions %}
+        <ul class="list-group rounded-0">
+            {% for region in regions %}
+                <li class="list-group-item rounded-0">
+                    <strong>Region Name:</strong> {{ region.name }}<br>
+                    <strong>Account ID:</strong> {{ region.account_id }}<br>
+                    <strong>Services:</strong>
+                    <ul>
+                        {% for service in region.services %}
+                            <li>{{ service.name }} - {{ service.type }}</li>
+                        {% endfor %}
+                    </ul>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No regions found.</p>
+    {% endif %}
+
+    <h3>Services</h3>
+    {% if services %}
+        <ul class="list-group rounded-0">
+            {% for service in services %}
+                <li class="list-group-item rounded-0">
+                    <strong>Service Name:</strong> {{ service.name }}<br>
+                    <strong>Service Type:</strong> {{ service.type }}<br>
+                    <strong>User:</strong> {{ service.user }}<br>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No services found.</p>
+    {% endif %}
+
+    <h3>Matched Services by Type</h3>
+    {% if matched_services_by_type %}
+        <ul class="list-group rounded-0">
+            {% for service in matched_services_by_type %}
+                <li class="list-group-item rounded-0">
+                    <strong>Service Name:</strong> {{ service.name }}<br>
+                    <strong>Service Type:</strong> {{ service.type }}<br>
+                    <strong>User:</strong> {{ service.user }}<br>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>No services of that type found.</p>
+    {% endif %}
+
+    <a href="{{ url_for('index') }}" class="btn btn-primary mt-3 rounded-0">Back to Home</a>
+{% endblock %}
