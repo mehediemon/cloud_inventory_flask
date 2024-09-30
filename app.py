@@ -14,7 +14,7 @@ login_manager.login_view = 'login'
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, int(user_id))
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -39,7 +39,9 @@ def logout():
 @login_required
 def index():
     accounts = Account.query.all()
-    return render_template('index.html', accounts=accounts)
+    providers = ['AWS', 'Azure', 'GCP']  # Hard-coded providers
+    return render_template('index.html', accounts=accounts, providers=providers)
+
 
 REGION_LIST = ['ap-south-1', 'ap-east-1', 'us-west-1', 'eu-central-1']  # Add more as needed
 
@@ -55,10 +57,15 @@ def account_detail(account_id):
 def add_account():
     name = request.form['name']
     account_id = request.form['account_id']
-    new_account = Account(name=name, account_id=account_id)
+    provider_name = request.form['provider_name']
+    email = request.form['email']  # Get email from the form
+    new_account = Account(name=name, account_id=account_id, provider_name=provider_name, email=email)  # Save email
     db.session.add(new_account)
     db.session.commit()
+    flash('Account added successfully!', 'success')
     return redirect(url_for('index'))
+
+
 
 @app.route('/account/<int:account_id>/add_region', methods=['POST'])
 @login_required
@@ -108,13 +115,26 @@ def edit_service(service_id):
 @login_required
 def add_service(account_id, region_id):
     name = request.form['service_name']
-    type = request.form['service_type']
+    service_type = request.form['service_type']  # This should match the name in the form
     user = request.form['service_user']
     credentials = request.form['credentials']
-    new_service = Service(name=name, type=type, user=user, region_id=region_id, credentials=credentials)
+    
+    # Create the new service, associating it with the account and region
+    new_service = Service(
+        name=name,
+        type=service_type,
+        user=user,
+        region_id=region_id,
+        account_id=account_id,  # Set the account_id
+        credentials=credentials
+    )
+    
     db.session.add(new_service)
     db.session.commit()
+    flash('Service added successfully!', 'success')
     return redirect(url_for('region_detail', account_id=account_id, region_id=region_id))
+
+
 
 @app.route('/download/<int:account_id>')
 @login_required
@@ -156,18 +176,23 @@ def change_password():
 def search():
     query = request.args.get('query')
 
-    # Searching accounts
-    accounts = Account.query.filter(Account.name.ilike(f'%{query}%')).all()
+    # Searching accounts by name or provider name
+    accounts = Account.query.filter(
+        (Account.name.ilike(f'%{query}%')) | 
+        (Account.provider_name.ilike(f'%{query}%'))
+    ).all()
 
     # Searching regions
     regions = Region.query.filter(Region.name.ilike(f'%{query}%')).all()
 
     # Searching services
-    services = Service.query.filter(Service.name.ilike(f'%{query}%')).all()
+    services = Service.query.filter(
+        (Service.name.ilike(f'%{query}%')) 
+        ).all()
 
     # Searching service types
     matched_services_by_type = Service.query.filter(Service.type.ilike(f'%{query}%')).all()
-    
+
     return render_template(
         'search_results.html',
         accounts=accounts,

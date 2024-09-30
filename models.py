@@ -12,7 +12,10 @@ class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     account_id = db.Column(db.String(50), nullable=False)
+    provider_name = db.Column(db.String(50), nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable=False)  # New field
     regions = db.relationship('Region', backref='account', lazy=True)
+
 
 class Region(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -24,6 +27,8 @@ class Service(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
     region_id = db.Column(db.Integer, db.ForeignKey('region.id'), nullable=False)
+    account_id = db.Column(db.Integer, db.ForeignKey('account.id'), nullable=False)  # Add account_id
     type = db.Column(db.String(50), nullable=False)
     user = db.Column(db.String(50), nullable=True)
     credentials = db.Column(db.String(100), nullable=True)
+
