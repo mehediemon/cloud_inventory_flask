@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file
+from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
+from datetime import timedelta, datetime, timezone
 from models import db, User, Account, Region, Service
 
 app = Flask(__name__)
@@ -12,9 +13,31 @@ db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+# Session timeout configuration
+SESSION_TIMEOUT = 15  # minutes
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
+
+@app.before_request
+def before_request():
+    # Check if user is authenticated
+    if current_user.is_authenticated:
+        # Update last activity time
+        if 'last_activity' in session:
+            # Calculate the difference between now and last activity
+            now = datetime.now(timezone.utc)  # Get the current time as aware datetime
+            last_activity = session['last_activity']
+            # Convert last_activity to aware datetime
+            last_activity = last_activity.replace(tzinfo=timezone.utc)
+            if (now - last_activity) > timedelta(minutes=SESSION_TIMEOUT):
+                # Log out the user if the session has timed out
+                logout_user()
+                flash('You have been logged out due to inactivity.', 'warning')
+                return redirect(url_for('login'))
+        # Update last activity
+        session['last_activity'] = datetime.now(timezone.utc)  # Store the current time as aware datetime
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -24,6 +47,7 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
+            session['last_activity'] = datetime.now(timezone.utc)  # Set last activity time
             return redirect(url_for('index'))
         else:
             flash('Invalid username or password', 'danger')
@@ -33,23 +57,172 @@ def login():
 @login_required
 def logout():
     logout_user()
+    session.pop('last_activity', None)  # Clear last activity
     return redirect(url_for('login'))
 
 @app.route('/')
 @login_required
 def index():
-    accounts = Account.query.all()
-    providers = ['AWS', 'Azure', 'GCP']  # Hard-coded providers
-    return render_template('index.html', accounts=accounts, providers=providers)
+    accounts = Account.query.order_by(Account.provider_name).all()
+    services = Service.query.all()
+    providers = ['AWS', 'Azure', 'GCP', 'OTHERS']  # Hard-coded providers
+
+    projects_count = Service.query.filter_by(status='active').count()
+    gcp_account_count = Account.query.filter_by(provider_name='GCP').count()
+    aws_account_count = Account.query.filter_by(provider_name='AWS').count()
+    azure_account_count = Account.query.filter_by(provider_name='Azure').count()
+    other_account_count = len(accounts) - aws_account_count - azure_account_count - gcp_account_count # Calculate remaining
+
+    return render_template('index.html', accounts=accounts, providers=providers,
+                           aws_account_count=aws_account_count, azure_account_count=azure_account_count, gcp_account_count=gcp_account_count, projects_count=projects_count,
+                           other_account_count=other_account_count)
 
 
-REGION_LIST = ['ap-south-1', 'ap-east-1', 'us-west-1', 'eu-central-1']  # Add more as needed
+# AWS Regions
+AWS_REGION_LIST = [
+    'us-east-1 (N. Virginia)',
+    'us-east-2 (Ohio)',
+    'us-west-1 (N. California)',
+    'us-west-2 (Oregon)',
+    'ap-northeast-1 (Tokyo)',
+    'ap-northeast-2 (Seoul)',
+    'ap-south-1 (Mumbai)',
+    'ap-southeast-1 (Singapore)',
+    'ap-southeast-2 (Sydney)',
+    'ca-central-1 (Central Canada)',
+    'eu-central-1 (Frankfurt)',
+    'eu-west-1 (Ireland)',
+    'eu-west-2 (London)',
+    'eu-west-3 (Paris)',
+    'eu-north-1 (Stockholm)',
+    'me-south-1 (Bahrain)',
+    'sa-east-1 (São Paulo)',
+    'us-gov-east-1 (AWS GovCloud - East)',
+    'us-gov-west-1 (AWS GovCloud - West)',
+]
+
+# Azure Regions
+AZURE_REGION_LIST = [
+    'East US',
+    'East US 2',
+    'West US',
+    'West US 2',
+    'Central US',
+    'North Central US',
+    'South Central US',
+    'Canada Central',
+    'Canada East',
+    'Brazil South',
+    'UK South',
+    'UK West',
+    'France Central',
+    'France South',
+    'Germany West Central',
+    'Germany North',
+    'Norway East',
+    'Norway West',
+    'Sweden Central',
+    'Sweden South',
+    'UAE North',
+    'UAE Central',
+    'India Central',
+    'India West',
+    'India South',
+    'Southeast Asia',
+    'East Asia',
+    'Japan East',
+    'Japan West',
+    'Korea Central',
+    'Korea South',
+    'Australia East',
+    'Australia Southeast',
+    'Australia Central',
+    'Australia Central 2',
+    'South Africa North',
+    'South Africa West',
+    'Switzerland North',
+    'Switzerland West',
+    'Poland Central',
+    'Poland South',
+    'Israel East',
+    'Israel Central',
+    'Hong Kong',
+]
+
+# GCP Regions
+GCP_REGION_LIST = [
+    'us-central1 (Iowa)',
+    'us-east1 (South Carolina)',
+    'us-east4 (Northern Virginia)',
+    'us-west1 (Oregon)',
+    'us-west2 (Los Angeles)',
+    'us-west3 (Salt Lake City)',
+    'us-west4 (Washington)',
+    'northamerica-northeast1 (Montreal)',
+    'southamerica-east1 (São Paulo)',
+    'europe-north1 (Finland)',
+    'europe-west1 (Belgium)',
+    'europe-west2 (London)',
+    'europe-west3 (Frankfurt)',
+    'europe-west4 (Netherlands)',
+    'europe-west6 (Zurich)',
+    'asia-east1 (Taiwan)',
+    'asia-northeast1 (Tokyo)',
+    'asia-northeast2 (Osaka)',
+    'asia-northeast3 (Seoul)',
+    'asia-south1 (Mumbai)',
+    'asia-southeast1 (Singapore)',
+    'asia-southeast2 (Jakarta)',
+    'australia-southeast1 (Sydney)',
+    'me-west1 (Qatar)',
+]
+OTHERS_REGION_LIST = [
+
+    'oracle us-ashburn-1 (Ashburn, US)',
+    'oracle us-phoenix-1 (Phoenix, US)',
+    'oracle eu-frankfurt-1 (Frankfurt, Germany)',
+    'oracle ap-tokyo-1 (Tokyo, Japan)',
+    'oracle ap-seoul-1 (Seoul, South Korea)',
+    'oracle me-dubai-1 (Dubai, UAE)',
+    'oracle ca-toronto-1 (Toronto, Canada)',
+    'digitalocean nyc1 (New York City, US)',
+    'digitalocean nyc2 (New York City, US)',
+    'digitalocean nyc3 (New York City, US)',
+    'digitalocean sgp1 (Singapore)',
+    'digitalocean lon1 (London, UK)',
+    'digitalocean ams2 (Amsterdam, Netherlands)',
+    'digitalocean fra1 (Frankfurt, Germany)',
+    'alibaba cn-hangzhou (Hangzhou, China)',
+    'alibaba cn-beijing (Beijing, China)',
+    'alibaba us-siliconvalley (Silicon Valley, US)',
+    'alibaba ap-southeast-1 (Singapore)',
+    'alibaba ap-northeast-1 (Tokyo, Japan)',
+    'alibaba eu-central-1 (Frankfurt, Germany)',
+    'alibaba me-south-1 (Bahrain)',
+    'heroku us (United States)',
+    'heroku eu (Europe)',
+    'others',
+]
+
 
 @app.route('/account/<int:account_id>')
 @login_required
 def account_detail(account_id):
     account = Account.query.get_or_404(account_id)
-    return render_template('account.html', account=account, regions=REGION_LIST)
+    
+    # Determine the region list based on the account provider
+    if account.provider_name == 'AWS':
+        regions = AWS_REGION_LIST
+    elif account.provider_name == 'Azure':
+        regions = AZURE_REGION_LIST
+    elif account.provider_name == 'GCP':
+        regions = GCP_REGION_LIST
+    elif account.provider_name == 'OTHERS':
+        regions = OTHERS_REGION_LIST
+    else:
+        regions = []  # Default to an empty list if provider is unknown
+    
+    return render_template('account.html', account=account, regions=regions)
 
 
 @app.route('/add_account', methods=['POST'])
@@ -58,14 +231,34 @@ def add_account():
     name = request.form['name']
     account_id = request.form['account_id']
     provider_name = request.form['provider_name']
-    email = request.form['email']  # Get email from the form
-    new_account = Account(name=name, account_id=account_id, provider_name=provider_name, email=email)  # Save email
+    email = request.form['email']
+
+    # Check for existing account with the same name and provider
+    existing_account = Account.query.filter_by(name=name, provider_name=provider_name).first()
+    if existing_account:
+        flash('An account with the same name and provider already exists.', 'danger')
+        return redirect(url_for('index'))
+
+
+    # Check for existing account with the same email and provider (only if provider is not OTHERS)
+    if provider_name != 'OTHERS':
+        existing_email_provider = Account.query.filter_by(email=email, provider_name=provider_name).first()
+        if existing_email_provider:
+            flash('An account with the same email and provider already exists.', 'danger')
+            return redirect(url_for('index'))
+    
+    # Check for existing account with the same email and provider
+    existing_account_id = Account.query.filter_by(account_id=account_id, provider_name=provider_name).first()
+    if existing_account_id:
+        flash('An account id within the same provider already exists.', 'danger')
+        return redirect(url_for('index'))
+
+    # Create the new account
+    new_account = Account(name=name, account_id=account_id, provider_name=provider_name, email=email)
     db.session.add(new_account)
     db.session.commit()
     flash('Account added successfully!', 'success')
     return redirect(url_for('index'))
-
-
 
 @app.route('/account/<int:account_id>/add_region', methods=['POST'])
 @login_required
@@ -86,47 +279,243 @@ def add_region(account_id):
     return redirect(url_for('account_detail', account_id=account_id))
 
 
-# At the top of your app.py
-SERVICE_TYPES = ['EC2', 'SNS', 'SES', 'ELB', 'Lambda', 'WAF', 'RDS']  # Add more as needed
+AWS_SERVICE_TYPES = [
+    'EC2',                 # Elastic Compute Cloud
+    'SNS',                 # Simple Notification Service
+    'SES',                 # Simple Email Service
+    'ELB',                 # Elastic Load Balancing
+    'Lambda',              # Serverless compute service
+    'WAF',                 # Web Application Firewall
+    'RDS',                 # Relational Database Service
+    'S3',                  # Simple Storage Service
+    'DynamoDB',            # NoSQL database service
+    'CloudFront',          # Content Delivery Network (CDN)
+    'SQS',                 # Simple Queue Service
+    'API Gateway',         # API management service
+    'CloudFormation',      # Infrastructure as Code
+    'CloudWatch',          # Monitoring and observability
+    'Elastic Beanstalk',   # PaaS for deploying applications
+    'ECS',                 # Elastic Container Service
+    'EKS',                 # Elastic Kubernetes Service
+    'Route 53',            # DNS service
+    'IAM',                 # Identity and Access Management
+    'Cognito',             # User identity service
+    'Elasticache',         # In-memory caching
+    'Redshift',            # Data warehousing
+    'Athena',              # Interactive query service
+    'Glue',                # Data integration service
+    'AppSync',             # GraphQL API service
+    'CloudTrail',          # Governance and compliance
+    'Step Functions',      # Orchestration service
+    'RoboMaker',           # Robotics service
+    'DMS',                 # Database Migration Service
+    'Snowball',            # Data transport solution
+    'EFS',                 # Elastic File System
+    'FSx',                 # File system service
+    'DocumentDB',          # Managed document database
+    'AppStream',           # Application streaming service
+    'QuickSight',          # Business analytics service
+]
+AZURE_SERVICE_TYPES = [
+    'Virtual Machines',           # Compute service
+    'App Services',               # Platform as a Service
+    'Azure Functions',            # Serverless computing
+    'Blob Storage',               # Object storage
+    'SQL Database',               # Managed SQL database
+    'Cosmos DB',                  # Globally distributed database service
+    'Azure Kubernetes Service',   # Kubernetes orchestration
+    'Azure DevOps',               # Development tools
+    'Azure Logic Apps',           # Workflow automation
+    'Azure CDN',                  # Content delivery network
+    'Azure Virtual Network',      # Networking service
+    'Azure Active Directory',     # Identity and access management
+    'Azure Monitor',              # Monitoring service
+    'Azure Cognitive Services',   # AI and machine learning
+    'Azure Backup',               # Backup service
+    'Azure Site Recovery',        # Disaster recovery
+    'Azure Data Lake Storage',    # Big data storage
+    'Azure Stream Analytics',     # Real-time analytics
+    'Azure Event Hubs',          # Event streaming
+    'Azure Firewall',             # Network security
+    'Azure Batch',                # Job scheduling service
+    'Azure SignalR Service',      # Real-time communication
+]
+GCP_SERVICE_TYPES = [
+    'Compute Engine',               # Virtual machines
+    'App Engine',                   # Platform as a Service
+    'Cloud Functions',              # Serverless computing
+    'Cloud Storage',                # Object storage
+    'Cloud SQL',                   # Managed SQL database
+    'BigQuery',                     # Data warehousing
+    'Kubernetes Engine',            # Managed Kubernetes
+    'Cloud Run',                    # Managed container service
+    'Cloud Pub/Sub',                # Messaging service
+    'Cloud Spanner',                # Globally distributed database service
+    'Cloud Dataflow',               # Stream and batch data processing
+    'Cloud Dataproc',               # Managed Spark and Hadoop
+    'Cloud AI Platform',            # Machine learning platform
+    'Cloud Functions',              # Event-driven serverless compute
+    'Cloud Identity',               # Identity management
+    'Cloud Monitoring',             # Monitoring and observability
+    'Cloud Logging',                # Log management
+    'Firebase',                     # Mobile and web app development
+    'Cloud Firestore',              # NoSQL database
+    'Cloud Endpoints',              # API management
+    'Cloud CDN',                    # Content delivery network
+    'Anthos',                       # Hybrid and multi-cloud management
+]
+OTHERS_SERVICE_TYPES = [
+    'Oracle Cloud Infrastructure (OCI) Compute',
+    'Oracle Cloud Object Storage',
+    'Oracle Autonomous Database',
+    'Oracle Functions (Serverless)',
+    'Oracle NoSQL Database',
+    'Oracle Cloud Infrastructure (OCI) Data Transfer',
+    'Oracle Cloud Infrastructure Registry',
+    'Oracle Cloud Infrastructure Streaming',
+    'Oracle Cloud Kubernetes Engine',
+    'Oracle Analytics Cloud',
+    'DigitalOcean Droplets (Virtual Machines)',
+    'DigitalOcean Spaces (Object Storage)',
+    'DigitalOcean Managed Databases',
+    'DigitalOcean Kubernetes',
+    'DigitalOcean App Platform (Platform as a Service)',
+    'DigitalOcean Load Balancers',
+    'DigitalOcean Volumes (Block Storage)',
+    'DigitalOcean Firewalls',
+    'DigitalOcean Monitoring and Alerts',
+    'DigitalOcean Database Clusters',
+    'Alibaba Elastic Compute Service (ECS)',
+    'Alibaba Object Storage Service (OSS)',
+    'Alibaba ApsaraDB for RDS',
+    'Alibaba Function Compute (Serverless)',
+    'Alibaba Table Store (NoSQL)',
+    'Alibaba CDN',
+    'Alibaba Message Service (MNS)',
+    'Alibaba Kubernetes Service (ACK)',
+    'Alibaba Data Transmission Service (DTS)',
+    'Alibaba API Gateway',
+    'Heroku Dynos (Containers)',
+    'Heroku Postgres',
+    'Heroku Redis',
+    'Heroku Connect',
+    'Heroku Scheduler',
+    'Heroku Pipelines',
+    'Heroku Add-ons',
+    'Heroku Data Clips',
+    'Heroku Shield (Security)',
+    'Heroku CI/CD',
+    'others',
+]
+
 
 @app.route('/account/<int:account_id>/region/<int:region_id>')
 @login_required
 def region_detail(account_id, region_id):
     region = Region.query.get_or_404(region_id)
-    return render_template('region.html', region=region, account_id=account_id, service_types=SERVICE_TYPES)
+    
+    # Determine the service list based on the account provider
+    account = Account.query.get_or_404(account_id)
+    if account.provider_name == 'AWS':
+        services = AWS_SERVICE_TYPES
+    elif account.provider_name == 'Azure':
+        services = AZURE_SERVICE_TYPES
+    elif account.provider_name == 'GCP':
+        services = GCP_SERVICE_TYPES
+    elif account.provider_name == 'OTHERS':
+        services = OTHERS_SERVICE_TYPES
+    else:
+        services = []  # Default to an empty list if provider is unknown
+    
+    return render_template('region.html', region=region, account_id=account_id, services=services)
+
+@app.route('/edit_account/<int:account_id>', methods=['GET', 'POST'])
+@login_required
+def edit_account(account_id):
+    account = Account.query.get_or_404(account_id)
+    providers = ['AWS', 'Azure', 'GCP', 'OTHERS']
+
+    if request.method == 'POST':
+        updated_name = request.form['name']
+        updated_email = request.form['email'].lower()  # Ensure case-insensitive comparison
+
+        # Check for existing accounts with the same name or email under the same provider
+        conflicting_account = Account.query.filter(
+            Account.provider_name == account.provider_name,
+            (Account.name == updated_name) | 
+            (Account.email == updated_email),
+            Account.id != account.id  # Exclude the current account
+        ).first()
+
+        if conflicting_account:
+            flash('An account with the same name or email already exists in this provider!', 'danger')
+            return render_template('edit_account.html', account=account, providers=providers)
+
+        # Update account details if no conflicts found
+        account.name = updated_name
+        account.email = updated_email
+
+        db.session.commit()
+        flash('Account updated successfully!', 'success')
+        return redirect(url_for('index'))
+
+    return render_template('edit_account.html', account=account, providers=providers)
+
 
 @app.route('/edit_service/<int:service_id>', methods=['GET', 'POST'])
 @login_required
 def edit_service(service_id):
     service = Service.query.get_or_404(service_id)
+    
+    # Get the account associated with the service
+    account = Account.query.get(service.account_id)
+    
+    # Determine the service list based on the account provider
+    if account.provider_name == 'AWS':
+        service_types = AWS_SERVICE_TYPES
+    elif account.provider_name == 'Azure':
+        service_types = AZURE_SERVICE_TYPES
+    elif account.provider_name == 'GCP':
+        service_types = GCP_SERVICE_TYPES
+    elif account.provider_name == 'OTHERS':
+        service_types = OTHERS_SERVICE_TYPES
+    else:
+        service_types = []  # Default to an empty list if provider is unknown
+
     if request.method == 'POST':
         service.name = request.form['service_name']
         service.type = request.form['service_type']
         service.user = request.form['service_user']
         service.credentials = request.form['credentials']
+        service.project_name = request.form['project_name']
         service.status = request.form['status']
         db.session.commit()
         flash('Service updated successfully!', 'success')
         return redirect(url_for('region_detail', account_id=service.region.account_id, region_id=service.region.id))
-    return render_template('edit_service.html', service=service, account_id=service.region.account_id, region_id=service.region.id, service_types=SERVICE_TYPES)
+
+    return render_template('edit_service.html', service=service, account_id=service.region.account_id, region_id=service.region.id, service_types=service_types)
 
 
 @app.route('/account/<int:account_id>/region/<int:region_id>/add_service', methods=['POST'])
 @login_required
 def add_service(account_id, region_id):
     name = request.form['service_name']
-    service_type = request.form['service_type']  # This should match the name in the form
+    service_type = request.form['service_type']
     user = request.form['service_user']
     credentials = request.form['credentials']
-    
-    # Create the new service, associating it with the account and region
+    status = request.form['status']
+    project_name = request.form.get('project_name')  # Get project name from the form (optional)
+
+    # Create the new service
     new_service = Service(
         name=name,
         type=service_type,
         user=user,
         region_id=region_id,
-        account_id=account_id,  # Set the account_id
-        credentials=credentials
+        account_id=account_id,
+        status=status,
+        credentials=credentials,
+        project_name=project_name  # Set the project name (optional)
     )
     
     db.session.add(new_service)
@@ -149,6 +538,7 @@ def download(account_id):
                 'Region': region.name,
                 'Service': service.type,
                 'Service Name': service.name,
+                'Project': service.project_name,
                 'User': service.user, 
                 'Credentials': service.credentials,
             })
@@ -158,6 +548,34 @@ def download(account_id):
     df.to_excel(output_file, index=False)
 
     return send_file(output_file, as_attachment=True)
+
+@app.route('/download_all')
+@login_required
+def download_all():
+    accounts = Account.query.order_by(Account.provider_name).all()
+    data = []
+    
+    for account in accounts:
+        for region in account.regions:
+            for service in region.services:
+                data.append({
+                    'Account Name': account.name,
+                    'Account ID': account.account_id,
+                    'Provider Name': account.provider_name,
+                    'Region': region.name,
+                    'Service Type': service.type,
+                    'Service Name': service.name,
+                    'Project Name': service.project_name,
+                    'User': service.user,
+                    'Credentials': service.credentials,
+                })
+    
+    df = pd.DataFrame(data)
+    output_file = "all_accounts_services.xlsx"
+    df.to_excel(output_file, index=False)
+
+    return send_file(output_file, as_attachment=True)
+
 
 @app.route('/change_password', methods=['GET', 'POST'])
 @login_required
@@ -187,9 +605,9 @@ def search():
 
     # Searching services
     services = Service.query.filter(
-        (Service.name.ilike(f'%{query}%')) 
-        ).all()
-
+        (Service.name.ilike(f'%{query}%')) |
+        (Service.project_name.ilike(f'%{query}%'))  # Add search for project_name
+    ).all()
     # Searching service types
     matched_services_by_type = Service.query.filter(Service.type.ilike(f'%{query}%')).all()
 

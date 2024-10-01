@@ -3,48 +3,127 @@
 {% block title %}Account List{% endblock %}
 
 {% block content %}
-
-<h2>Add Account</h2>
-<form action="{{ url_for('add_account') }}" method="POST" class="mt-3 d-flex">
-    <div class="d-flex align-items-center">
-        <div class="form-group mb-0 me-3">
-            <input type="text" class="form-control rounded-0" name="name" placeholder="Account Name" required>
+<div class="row">
+    <div class="col-md-3 mb-3">
+        <div class="card text-center rounded-0 ">
+            <div class="card-header rounded-0 text-white" style="background-color: #38a3a5;">
+                AWS Accounts
+            </div>
+            <div class="card-body rounded-0">
+                <h1 class="card-title">{{ aws_account_count }}</h1>
+            </div>
         </div>
-        <div class="form-group mb-0 me-3">
-            <input type="text" class="form-control rounded-0" name="account_id" placeholder="Account ID" required>
-        </div>
-        <div class="form-group mb-0 me-3">
-            <select class="form-control rounded-0" name="provider_name" required>
-                <option value="">Select Provider</option>
-                {% for provider in providers %}
-                    <option value="{{ provider }}">{{ provider }}</option>
-                {% endfor %}
-            </select>
-        </div>
-        <div class="form-group mb-0 me-3">
-            <input type="email" class="form-control rounded-0" name="email" placeholder="Email" required>
-        </div>
-        <button type="submit" class="btn btn-primary rounded-0">Add Account</button>
     </div>
-</form>
 
-
-<h2>Account List</h2>
-
-<div class="account-list rounded-0">
-    {% for account in accounts %}
-    <div class="account-item">
-
-        <a href="{{ url_for('account_detail', account_id=account.id) }}">{{ account.name }} - {{ account.account_id }}</a>
-        <a href="{{ url_for('account_detail', account_id=account.id) }}">{{ account.provider_name }}</a>
-        <a href="{{ url_for('download', account_id=account.id) }}" class="btn btn-success btn-sm rounded-0">Download</a>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center rounded-0">
+            <div class="card-header rounded-0 text-white" style="background-color: #38a3a5;">
+                Azure Accounts
+            </div>
+            <div class="card-body rounded-0">
+                <h1 class="card-title">{{ azure_account_count }}</h1>
+            </div>
+        </div>
     </div>
-    {% endfor %}
-    {% if accounts|length == 0 %}
-    <div class="account-item">
-        <span>No accounts available.</span>
+    <div class="col-md-3 mb-3">
+        <div class="card text-center rounded-0 ">
+            <div class="card-header rounded-0 text-white" style="background-color: #38a3a5;">
+                GCP Accounts
+            </div>
+            <div class="card-body rounded-0">
+                <h1 class="card-title">{{ gcp_account_count }}</h1>
+            </div>
+        </div>
     </div>
-    {% endif %}
+    <div class="col-md-3 mb-3">
+        <div class="card text-center rounded-0">
+            <div class="card-header text-white rounded-0" style="background-color: #38a3a5;">
+                Other Accounts
+            </div>
+            <div class="card-body rounded-0">
+                <h1 class="card-title">{{ other_account_count }}</h1>
+            </div>
+        </div>
+    </div>
 </div>
-
+<div class="row">
+    <div class="col-md-4">
+        <div class="card mb-3 rounded-0">
+            <a href="{{ url_for('download_all') }}" class="btn btn-warning rounded-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" fill="currentColor" class="bi bi-cloud-arrow-down" viewBox="0 0 16 16">
+                    <path fill-rule="evenodd" d="M7.646 10.854a.5.5 0 0 0 .708 0l2-2a.5.5 0 0 0-.708-.708L8.5 9.293V5.5a.5.5 0 0 0-1 0v3.793L6.354 8.146a.5.5 0 1 0-.708.708z"/>
+                    <path d="M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 6.804 16 8.137 16 9.773 16 11.569 14.502 13 12.687 13H3.781C1.708 13 0 11.366 0 9.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383m.653.757c-.757.653-1.153 1.44-1.153 2.056v.448l-.445.049C2.064 6.805 1 7.952 1 9.318 1 10.785 2.23 12 3.781 12h8.906C13.98 12 15 10.988 15 9.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 4.825 10.328 3 8 3a4.53 4.53 0 0 0-2.941 1.1z"/>
+                  </svg>
+                 Download All Accounts</a>
+        </div>
+        <div class="card mb-4 rounded-0">
+            <div class="card text-center rounded-0">
+                <div class="card-header text-white rounded-0" style="background-color: #38a3a5;">
+                    Active Projects
+                </div>
+                <div class="card-body  rounded-0">
+                    <h1 class="card-title">{{ projects_count }}</h1>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-4">
+            <div class="card-body">
+                <h2 class="card-title">Add Account</h2>
+                <form action="{{ url_for('add_account') }}" method="POST" class="mt-3">
+                    <div class="row mb-3">
+                        <div class="col">
+                            <input type="text" class="form-control rounded-0" name="name" placeholder="Account Name" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col">
+                            <input type="number" class="form-control rounded-0" name="account_id" placeholder="Account ID" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-5">
+                            <select class="form-control rounded-0" name="provider_name" required>
+                                <option value="" disabled selected>Select Provider</option>
+                                {% for provider in providers %}
+                                <option value="{{ provider }}">{{ provider }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-7">
+                            <input type="email" class="form-control rounded-0" name="email" placeholder="Email" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary rounded-0 " style="width: 100%;">Add Account</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-8">
+        <h3 class="text-center p-1" style="background-color: #38a3a5;">Account List</h3>
+        <div class="card mb-2 account-list rounded-0">
+            <ul class="list-group list-group-flush">
+                {% for account in accounts %}
+                <li class="list-group-item d-flex justify-content-between align-items-center" >
+                    <div class="account-info">
+                        <h5 class="mb-1"><a href="{{ url_for('account_detail', account_id=account.id) }}">{{ account.name }}</a></h5>
+                        <small>Account ID: {{ account.account_id }}</small><br>
+                        <small>Account email: {{ account.email }}</small>
+                    </div>
+                    <div class="text-end">
+                        <span class="badge bg-primary">{{ account.provider_name }}</span> <a
+                            href="{{ url_for('download', account_id=account.id) }}"
+                            class="btn btn-success btn-sm rounded-0">Download</a>
+                            <a href="{{ url_for('edit_account', account_id=account.id) }}" class="btn btn-warning btn-sm rounded-0">Edit</a>
+                    </div>
+                </li>
+                {% endfor %}
+                {% if accounts|length == 0 %}
+                <li class="list-group-item text-center">
+                    <span class="text-muted">No accounts available.</span>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</div>
 {% endblock %}

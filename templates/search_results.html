@@ -52,7 +52,9 @@
                 <li class="list-group-item rounded-0">
                     <strong>Service Name:</strong> {{ service.name }}<br>
                     <strong>Service Type:</strong> {{ service.type }}<br>
-                    <strong>User:</strong> {{ service.user }}<br>
+                    <strong>Account:</strong> {{ service.region.account.name }}<br>
+                    <strong>Region:</strong> {{ service.region.name }}<br>
+                    <strong>Project Name:</strong> {{ service.project_name }}<br>  <!-- Display project name -->
                 </li>
             {% endfor %}
         </ul>

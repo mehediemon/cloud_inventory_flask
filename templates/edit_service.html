@@ -1,39 +1,48 @@
 {% extends 'base.html' %}
 
-{% block title %}Account List{% endblock %}
+{% block title %}Edit Service: {{ service.name }}{% endblock %}
 
 {% block content %}
-        <h2>Edit Service: {{ service.name }}</h2>
-        <form method="POST">
-            <div class="form-group">
-                <label for="service_name">Service Name</label>
-                <input type="text" class="form-control" name="service_name" value="{{ service.name }}" required>
+<div class="container mt-4">
+    <h2 class="mb-4">Edit Service: {{ service.name }}</h2>
+    <form method="POST">
+        <div class="card rounded-0 shadow">
+            <div class="card-body">
+                <div class="form-group mb-3">
+                    <label for="service_name" class="form-label">Service Name</label>
+                    <input type="text" class="form-control rounded-0" name="service_name" value="{{ service.name }}" required>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="service_type" class="form-label">Service Type</label>
+                    <select class="form-select rounded-0" name="service_type" required>
+                        {% for type in service_types %}
+                            <option value="{{ type }}" {% if service.type == type %}selected{% endif %}>{{ type }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="service_user" class="form-label">User</label>
+                    <input type="text" class="form-control rounded-0" name="service_user" value="{{ service.user }}" required>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="project_name" class="form-label">Project</label>
+                    <input type="text" class="form-control rounded-0" name="project_name" value="{{ service.project_name }}" required>
+                </div>
+                <div class="form-group mb-3">
+                    <label for="credentials" class="form-label">Credentials</label>
+                    <input type="text" class="form-control rounded-0" name="credentials" value="{{ service.credentials }}" required>
+                </div>
+                <div class="form-group mb-4">
+                    <label for="status" class="form-label">Status</label>
+                    <select class="form-select rounded-0" name="status" required>
+                        <option value="active" {% if service.status == 'active' %}selected{% endif %}>Active</option>
+                        <option value="inactive" {% if service.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary rounded-0">Update Service</button>
+                <a href="{{ url_for('region_detail', account_id=account_id, region_id=region_id) }}" class="btn btn-secondary rounded-0">Cancel</a>
             </div>
-            <div class="form-group">
-                <label for="service_type">Service Type</label>
-                <select class="form-control" name="service_type" required>
-                    {% for type in service_types %}
-                        <option value="{{ type }}" {% if service.type == type %}selected{% endif %}>{{ type }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label for="service_user">User</label>
-                <input type="text" class="form-control rounded-0" name="service_user" value="{{ service.user }}" required>
-            </div>
-            <div class="form-group">
-                <label for="credentials">Credentials</label>
-                <input type="text" class="form-control rounded-0" name="credentials" value="{{ service.credentials }}" required>
-            </div>
-            <div class="form-group">
-                <label for="status">Status</label>
-                <select class="form-control rounded-0" name="status" required>
-                    <option value="active" {% if service.status == 'active' %}selected{% endif %}>Active</option>
-                    <option value="inactive" {% if service.status == 'inactive' %}selected{% endif %}>Inactive</option>
-                </select>
-            </div>
-            <button type="submit" class="btn btn-primary rounded-0">Update Service</button>
-        </form>
-        <a href="{{ url_for('region_detail', account_id=account_id, region_id=region_id) }}" class="btn btn-secondary mt-3 rounded-0">Cancel</a>
+        </div>
+    </form>
+</div>
 {% endblock %}

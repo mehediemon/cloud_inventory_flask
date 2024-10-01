@@ -9,10 +9,37 @@
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"></script>
     <style>
+        :root {
+            --primary-color: #38a3a5;
+        }
+
+
+        button {
+            background-color: var(--accent-color);
+            color: var(--text-color);
+        }
+
+        a {
+            color: var(--primary-color);
+        }
+
+        .card {
+            border: 1px solid var(--primary-color);
+        }
+
+        .card-header {
+            background-color: var(--primary-color);
+            color: var(--text-color);
+        }
+
+        .card-body {
+            color: var(--text-color);
+        }
+
         .account-list {
-            max-height: 600px;
+            max-height: 500px;
             overflow-y: auto;
-            margin-top: 20px;
+            margin-top: 7px;
             border: 1px solid #ddd;
             border-radius: 5px;
             padding: 10px;
@@ -41,6 +68,29 @@
             width: 100%;
             max-width: 500px;
         }
+
+        .btn-primary {
+            background-color: #38a3a5;
+            /* Teal primary button */
+            border-color: #38a3a5;
+            padding: 10px 15px;
+        }
+
+        .btn-primary:hover {
+            background-color: #2e8c8d;
+        }
+        .flash-messages {
+        position: fixed; /* Fixed positioning */
+        top: 20px; /* Distance from the top */
+        right: 20px; /* Distance from the right */
+        z-index: 1050; /* Ensure it's above other elements */
+        width: auto; /* Auto width to fit content */
+        max-width: 300px; /* Optional: Limit width for larger screens */
+    }
+    .flash-message {
+        margin-bottom: 10px; /* Space between messages */
+        opacity: 1; /* Ensure messages start fully visible */
+    }
     </style>
 </head>
 
@@ -55,12 +105,14 @@
             <ul class="navbar-nav ms-auto">
                 <li class="nav-item">
                     <form class="d-flex" action="{{ url_for('search') }}" method="GET">
-                        <input class="form-control me-2 rounded-0" type="search" name="query" placeholder="Search" aria-label="Search">
+                        <input class="form-control me-2 rounded-0" type="search" name="query" placeholder="Search"
+                            aria-label="Search">
                         <button class="btn btn-outline-success rounded-0" type="submit">Search</button>
                     </form>
                 </li>
                 <li class="nav-item">
-                    <a href="{{ url_for('change_password') }}" class="btn btn-warning ms-2 rounded-0">Change Password</a>
+                    <a href="{{ url_for('change_password') }}" class="btn btn-warning ms-2 rounded-0">Change
+                        Password</a>
                 </li>
                 <li class="nav-item">
                     <a href="{{ url_for('logout') }}" class="btn btn-danger ms-2 rounded-0">Logout</a>
@@ -70,9 +122,34 @@
     </nav>
 
     <div class="container mt-5">
+        {% with messages = get_flashed_messages(with_categories=True) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} flash-message" id="flash-message">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
         {% block content %}{% endblock %}
     </div>
-
+    <script>
+        // Wait for the DOM to load
+        document.addEventListener("DOMContentLoaded", function () {
+            // Get all flash messages
+            const flashMessages = document.querySelectorAll('.flash-message');
+            flashMessages.forEach(message => {
+                // Set a timeout to fade out each message after 1 second
+                setTimeout(() => {
+                    message.style.transition = 'opacity 0.2s ease'; // Fade-out transition
+                    message.style.opacity = 0; // Start fade out
+                    setTimeout(() => {
+                        message.remove(); // Remove the message from the DOM after fading out
+                    }, 500); // Wait for fade-out to finish
+                }, 1000); // Wait 1 second before starting to fade out
+            });
+        });
+    </script>
 </body>
 
 </html>
