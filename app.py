@@ -541,6 +541,7 @@ def download(account_id):
                 'Project': service.project_name,
                 'User': service.user, 
                 'Credentials': service.credentials,
+                'status' : service.status,
             })
     
     df = pd.DataFrame(data)
@@ -568,6 +569,7 @@ def download_all():
                     'Project Name': service.project_name,
                     'User': service.user,
                     'Credentials': service.credentials,
+                    'status' : service.status,
                 })
     
     df = pd.DataFrame(data)
