@@ -28,7 +28,8 @@ def before_request():
         # Update last activity time
         if 'last_activity' in session:
             # Calculate the difference between now and last activity
-            now = datetime.now(timezone.utc)  # Get the current time as aware datetime
+            # Get the current time as aware datetime
+            now = datetime.now(timezone.utc)
             last_activity = session['last_activity']
             # Convert last_activity to aware datetime
             last_activity = last_activity.replace(tzinfo=timezone.utc)
@@ -38,7 +39,8 @@ def before_request():
                 flash('You have been logged out due to inactivity.', 'warning')
                 return redirect(url_for('login'))
         # Update last activity
-        session['last_activity'] = datetime.now(timezone.utc)  # Store the current time as aware datetime
+        # Store the current time as aware datetime
+        session['last_activity'] = datetime.now(timezone.utc)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -48,7 +50,8 @@ def login():
         user = User.query.filter_by(username=username).first()
         if user and check_password_hash(user.password, password):
             login_user(user)
-            session['last_activity'] = datetime.now(timezone.utc)  # Set last activity time
+            session['last_activity'] = datetime.now(
+                timezone.utc)  # Set last activity time
             return redirect(url_for('index'))
         else:
             flash('Invalid username or password', 'danger')
@@ -71,13 +74,14 @@ def index():
     projects_count = Service.query.filter_by(status='active').count()
     gcp_account_count = Account.query.filter_by(provider_name='GCP').count()
     aws_account_count = Account.query.filter_by(provider_name='AWS').count()
-    azure_account_count = Account.query.filter_by(provider_name='Azure').count()
-    other_account_count = len(accounts) - aws_account_count - azure_account_count - gcp_account_count # Calculate remaining
+    azure_account_count = Account.query.filter_by(
+        provider_name='Azure').count()
+    other_account_count = len(accounts) - aws_account_count - \
+        azure_account_count - gcp_account_count  # Calculate remaining
 
     return render_template('index.html', accounts=accounts, providers=providers,
                            aws_account_count=aws_account_count, azure_account_count=azure_account_count, gcp_account_count=gcp_account_count, projects_count=projects_count,
                            other_account_count=other_account_count)
-
 # AWS Regions
 AWS_REGION_LIST = [
     'us-east-1 (N. Virginia)',
@@ -177,6 +181,7 @@ GCP_REGION_LIST = [
     'me-west1 (Qatar)',
     'global',
 ]
+# OTHERS Regions
 OTHERS_REGION_LIST = [
 
     'oracle us-ashburn-1 (Ashburn, US)',
@@ -210,7 +215,7 @@ OTHERS_REGION_LIST = [
 @login_required
 def account_detail(account_id):
     account = Account.query.get_or_404(account_id)
-    
+
     # Determine the region list based on the account provider
     if account.provider_name == 'AWS':
         regions = AWS_REGION_LIST
@@ -222,9 +227,8 @@ def account_detail(account_id):
         regions = OTHERS_REGION_LIST
     else:
         regions = []  # Default to an empty list if provider is unknown
-    
-    return render_template('account.html', account=account, regions=regions)
 
+    return render_template('account.html', account=account, regions=regions)
 
 @app.route('/add_account', methods=['POST'])
 @login_required
@@ -236,27 +240,30 @@ def add_account():
     passwd = request.form['passwd']
 
     # Check for existing account with the same name and provider
-    existing_account = Account.query.filter_by(name=name, provider_name=provider_name).first()
+    existing_account = Account.query.filter_by(
+        name=name, provider_name=provider_name).first()
     if existing_account:
         flash('An account with the same name and provider already exists.', 'danger')
         return redirect(url_for('index'))
 
-
     # Check for existing account with the same email and provider (only if provider is not OTHERS)
     if provider_name != 'OTHERS':
-        existing_email_provider = Account.query.filter_by(email=email, provider_name=provider_name).first()
+        existing_email_provider = Account.query.filter_by(
+            email=email, provider_name=provider_name).first()
         if existing_email_provider:
             flash('An account with the same email and provider already exists.', 'danger')
             return redirect(url_for('index'))
-    
+
     # Check for existing account with the same email and provider
-    existing_account_id = Account.query.filter_by(account_id=account_id, provider_name=provider_name).first()
+    existing_account_id = Account.query.filter_by(
+        account_id=account_id, provider_name=provider_name).first()
     if existing_account_id:
         flash('An account id within the same provider already exists.', 'danger')
         return redirect(url_for('index'))
 
     # Create the new account
-    new_account = Account(name=name, account_id=account_id, provider_name=provider_name, email=email, passwd=passwd)
+    new_account = Account(name=name, account_id=account_id,
+                          provider_name=provider_name, email=email, passwd=passwd)
     db.session.add(new_account)
     db.session.commit()
     flash('Account added successfully!', 'success')
@@ -266,10 +273,11 @@ def add_account():
 @login_required
 def add_region(account_id):
     name = request.form['region_name']
-    
+
     # Check if the region already exists for the account
-    existing_region = Region.query.filter_by(name=name, account_id=account_id).first()
-    
+    existing_region = Region.query.filter_by(
+        name=name, account_id=account_id).first()
+
     if existing_region:
         flash('This region already exists for this account.', 'danger')
     else:
@@ -413,7 +421,7 @@ OTHERS_SERVICE_TYPES = [
 @login_required
 def region_detail(account_id, region_id):
     region = Region.query.get_or_404(region_id)
-    
+
     # Determine the service list based on the account provider
     account = Account.query.get_or_404(account_id)
     if account.provider_name == 'AWS':
@@ -426,7 +434,7 @@ def region_detail(account_id, region_id):
         services = OTHERS_SERVICE_TYPES
     else:
         services = []  # Default to an empty list if provider is unknown
-    
+
     return render_template('region.html', region=region, account_id=account_id, services=services)
 
 @app.route('/edit_account/<int:account_id>', methods=['GET', 'POST'])
@@ -437,19 +445,21 @@ def edit_account(account_id):
 
     if request.method == 'POST':
         updated_name = request.form['name']
-        updated_email = request.form['email'].lower()  # Ensure case-insensitive comparison
+        # Ensure case-insensitive comparison
+        updated_email = request.form['email'].lower()
         updated_passwd = request.form['passwd']
 
         # Check for existing accounts with the same name or email under the same provider
         conflicting_account = Account.query.filter(
             Account.provider_name == account.provider_name,
-            (Account.name == updated_name) | 
+            (Account.name == updated_name) |
             (Account.email == updated_email),
             Account.id != account.id  # Exclude the current account
         ).first()
 
         if conflicting_account:
-            flash('An account with the same name or email already exists in this provider!', 'danger')
+            flash(
+                'An account with the same name or email already exists in this provider!', 'danger')
             return render_template('edit_account.html', account=account, providers=providers)
 
         # Update account details if no conflicts found
@@ -463,15 +473,14 @@ def edit_account(account_id):
 
     return render_template('edit_account.html', account=account, providers=providers)
 
-
 @app.route('/edit_service/<int:service_id>', methods=['GET', 'POST'])
 @login_required
 def edit_service(service_id):
     service = Service.query.get_or_404(service_id)
-    
+
     # Get the account associated with the service
     account = Account.query.get(service.account_id)
-    
+
     # Determine the service list based on the account provider
     if account.provider_name == 'AWS':
         service_types = AWS_SERVICE_TYPES
@@ -506,7 +515,8 @@ def add_service(account_id, region_id):
     user = request.form['service_user']
     credentials = request.form['credentials']
     status = request.form['status']
-    project_name = request.form.get('project_name')  # Get project name from the form (optional)
+    # Get project name from the form (optional)
+    project_name = request.form.get('project_name')
 
     # Create the new service
     new_service = Service(
@@ -526,7 +536,6 @@ def add_service(account_id, region_id):
     return redirect(url_for('region_detail', account_id=account_id, region_id=region_id))
 
 
-
 @app.route('/download/<int:account_id>')
 @login_required
 def download(account_id):
@@ -541,11 +550,11 @@ def download(account_id):
                 'Service': service.type,
                 'Service Name': service.name,
                 'Project': service.project_name,
-                'User': service.user, 
+                'User': service.user,
                 'Credentials': service.credentials,
-                'status' : service.status,
+                'status': service.status,
             })
-    
+
     df = pd.DataFrame(data)
     output_file_name = f"{account.name}_services.xlsx"
     output_dir = os.path.join(current_app.root_path, 'downloads')
@@ -560,7 +569,7 @@ def download(account_id):
 def download_all():
     accounts = Account.query.order_by(Account.provider_name).all()
     data = []
-    
+
     for account in accounts:
         for region in account.regions:
             for service in region.services:
@@ -574,9 +583,9 @@ def download_all():
                     'Project Name': service.project_name,
                     'User': service.user,
                     'Credentials': service.credentials,
-                    'status' : service.status,
+                    'status': service.status,
                 })
-    
+                
     df = pd.DataFrame(data)
     output_dir = os.path.join(current_app.root_path, 'downloads')
     output_file = os.path.join(output_dir, "all_accounts_services.xlsx")
@@ -592,7 +601,8 @@ def change_password():
     if request.method == 'POST':
         new_password = request.form['new_password']
         user = User.query.get(current_user.id)
-        user.password = generate_password_hash(new_password, method='pbkdf2:sha256')
+        user.password = generate_password_hash(
+            new_password, method='pbkdf2:sha256')
         db.session.commit()
         flash('Password changed successfully!', 'success')
         return redirect(url_for('index'))
@@ -605,7 +615,7 @@ def search():
 
     # Searching accounts by name or provider name
     accounts = Account.query.filter(
-        (Account.name.ilike(f'%{query}%')) | 
+        (Account.name.ilike(f'%{query}%')) |
         (Account.provider_name.ilike(f'%{query}%'))
     ).all()
 
@@ -615,10 +625,12 @@ def search():
     # Searching services
     services = Service.query.filter(
         (Service.name.ilike(f'%{query}%')) |
-        (Service.project_name.ilike(f'%{query}%'))  # Add search for project_name
+        # Add search for project_name
+        (Service.project_name.ilike(f'%{query}%'))
     ).all()
     # Searching service types
-    matched_services_by_type = Service.query.filter(Service.type.ilike(f'%{query}%')).all()
+    matched_services_by_type = Service.query.filter(
+        Service.type.ilike(f'%{query}%')).all()
 
     return render_template(
         'search_results.html',
@@ -629,11 +641,10 @@ def search():
         query=query
     )
 
-
-
 def create_default_user():
     if User.query.count() == 0:  # Check if there are no users
-        admin_user = User(username='admin', password=generate_password_hash('adminpassword', method='pbkdf2:sha256'))
+        admin_user = User(username='admin', password=generate_password_hash(
+            'adminpassword', method='pbkdf2:sha256'))
         db.session.add(admin_user)
         db.session.commit()
 
