@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect, url_for, flash, send_file, session
+import os
+from flask import Flask, current_app, render_template, request, redirect, url_for, flash, send_file, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -232,6 +233,7 @@ def add_account():
     account_id = request.form['account_id']
     provider_name = request.form['provider_name']
     email = request.form['email']
+    passwd = request.form['passwd']
 
     # Check for existing account with the same name and provider
     existing_account = Account.query.filter_by(name=name, provider_name=provider_name).first()
@@ -254,7 +256,7 @@ def add_account():
         return redirect(url_for('index'))
 
     # Create the new account
-    new_account = Account(name=name, account_id=account_id, provider_name=provider_name, email=email)
+    new_account = Account(name=name, account_id=account_id, provider_name=provider_name, email=email, passwd=passwd)
     db.session.add(new_account)
     db.session.commit()
     flash('Account added successfully!', 'success')
@@ -438,6 +440,7 @@ def edit_account(account_id):
     if request.method == 'POST':
         updated_name = request.form['name']
         updated_email = request.form['email'].lower()  # Ensure case-insensitive comparison
+        updated_passwd = request.form['passwd']
 
         # Check for existing accounts with the same name or email under the same provider
         conflicting_account = Account.query.filter(
@@ -454,6 +457,7 @@ def edit_account(account_id):
         # Update account details if no conflicts found
         account.name = updated_name
         account.email = updated_email
+        account.passwd = updated_passwd
 
         db.session.commit()
         flash('Account updated successfully!', 'success')
@@ -544,8 +548,13 @@ def download(account_id):
                 'status' : service.status,
             })
     
+
+    
     df = pd.DataFrame(data)
-    output_file = f"{account.name}_services.xlsx"
+    output_file_name = f"{account.name}_services.xlsx"
+    output_dir = os.path.join(current_app.root_path, 'downloads')
+    output_file = os.path.join(output_dir, output_file_name)
+    os.makedirs(output_dir, exist_ok=True)
     df.to_excel(output_file, index=False)
 
     return send_file(output_file, as_attachment=True)
@@ -573,7 +582,9 @@ def download_all():
                 })
     
     df = pd.DataFrame(data)
-    output_file = "all_accounts_services.xlsx"
+    output_dir = os.path.join(current_app.root_path, 'downloads')
+    output_file = os.path.join(output_dir, "all_accounts_services.xlsx")
+    os.makedirs(output_dir, exist_ok=True)
     df.to_excel(output_file, index=False)
 
     return send_file(output_file, as_attachment=True)

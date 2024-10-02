@@ -3,57 +3,59 @@
 {% block title %}Account List{% endblock %}
 
 {% block content %}
-
-<div class="row">
-    <div class="col-md-4">
-        <div class="card text-center rounded-0" style="height: 150px;">
-            <div class="card-header text-white rounded-0" style="background-color: #38a3a5;">
-                <h4>Account name: {{ account.name }}</h4>
+<div class="container">
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center rounded-0" style="height: 150px; background-color: #f8f9fa;">
+                <div class="card-header text-white rounded-0" style="background-color: #38a3a5;">
+                    <h4>Account Name: {{ account.name }}</h4>
+                </div>
+                <div class="card-body rounded-0">
+                    <h5>ID: {{ account.account_id }}</h5>
+                </div>
             </div>
-            <div class="card-body  rounded-0">
-                <h5>ID: {{ account.account_id }}</h5>
+        </div>
+        <div class="col-md-8">
+            <div class="card mb-4 rounded-0" style="height: 150px; background-color: #f8f9fa;">
+                <div class="card-header text-center text-white rounded-0" style="background-color: #38a3a5;">
+                    <h4>Add Region</h4>
+                </div>
+                <div class="card-body rounded-0">
+                    <form method="POST" action="{{ url_for('add_region', account_id=account.id) }}" class="d-flex">
+                        <select class="form-control rounded-0 me-2" name="region_name" required>
+                            <option value="" disabled selected>Select a Region to Add</option>
+                            {% for region in regions %}
+                            <option value="{{ region }}">{{ region }}</option>
+                            {% endfor %}
+                        </select>
+                        <button type="submit" class="btn btn-primary rounded-0">Add Region</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-    <div class="col-md-8">
-        <div class="card mb-4 rounded-0" style="height: 150px;">
-            <div class="card-header text-center rounded-0" style="background-color: #38a3a5;">
-                <h4>Add Region</h4>
-            </div>
-            <div class="card-body rounded-0">
-                <form method="POST" action="{{ url_for('add_region', account_id=account.id) }}" class="d-flex">
-                    <select class="form-control rounded-0 me-2" name="region_name" required>
-                        <option value="" disabled selected>Select a Region to add</option>
-                        {% for region in regions %}
-                        <option value="{{ region }}">{{ region }}</option>
-                        {% endfor %}
-                    </select>
-                    <button type="submit" class="btn btn-primary rounded-0">Add Region</button>
-                </form>
-            </div>
 
+    <h5 class="text-center text-white p-3 mb-3" style="background-color: #38a3a5;">Region List in {{ account.name }}</h5>
+
+    <div class="row row-cols-1 row-cols-md-3 g-3" style="max-height: 500px; overflow-y: auto;">
+        {% for region in account.regions %}
+        <div class="col mb-4">
+            <div class="card border-success p-3 rounded-0" style="background-color: #f8f9fa;">
+                <a href="{{ url_for('region_detail', account_id=account.id, region_id=region.id) }}" class="text-decoration-none text-dark">
+                    <div class="d-flex align-items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" fill="currentColor" class="bi bi-geo-alt-fill me-2" viewBox="0 0 16 16">
+                            <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
+                        </svg>
+                        <span>{{ region.name }}</span>
+                    </div>
+                </a>
+            </div>
         </div>
+        {% endfor %}
+    </div>
 
+    <div class="d-flex justify-content-center mt-4">
+        <a href="{{ url_for('index') }}" class="btn btn-primary rounded-0">Back to Home</a>
     </div>
 </div>
-
-
-    <h5 class=" text-center p-3 mb-3" style="background-color: #38a3a5;">Region List in {{ account.name }}</h5>
-
-<div class="row row-cols-1 row-cols-md-4 g-4" style="max-height: 900px; overflow-y: auto;">
-    {% for region in account.regions %}
-    <div class="col">
-        <div class="card border-success p-3  rounded-0">
-            <a href="{{ url_for('region_detail', account_id=account.id, region_id=region.id) }}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="23" height="23" fill="currentColor" class="bi bi-geo-alt-fill" viewBox="0 0 16 16">
-                    <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10m0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6"/>
-                  </svg>
-                {{ region.name }}</a>
-        </div>
-    </div>
-    {% endfor %}
-</div>
-
-<a href="{{ url_for('index') }}" class="btn btn-primary rounded-0 mt-3">Back to Home</a>
-
 {% endblock %}
