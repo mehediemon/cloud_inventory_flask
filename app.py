@@ -78,7 +78,6 @@ def index():
                            aws_account_count=aws_account_count, azure_account_count=azure_account_count, gcp_account_count=gcp_account_count, projects_count=projects_count,
                            other_account_count=other_account_count)
 
-
 # AWS Regions
 AWS_REGION_LIST = [
     'us-east-1 (N. Virginia)',
@@ -100,8 +99,8 @@ AWS_REGION_LIST = [
     'sa-east-1 (São Paulo)',
     'us-gov-east-1 (AWS GovCloud - East)',
     'us-gov-west-1 (AWS GovCloud - West)',
+    'global',
 ]
-
 # Azure Regions
 AZURE_REGION_LIST = [
     'East US',
@@ -148,8 +147,8 @@ AZURE_REGION_LIST = [
     'Israel East',
     'Israel Central',
     'Hong Kong',
+    'global',
 ]
-
 # GCP Regions
 GCP_REGION_LIST = [
     'us-central1 (Iowa)',
@@ -176,6 +175,7 @@ GCP_REGION_LIST = [
     'asia-southeast2 (Jakarta)',
     'australia-southeast1 (Sydney)',
     'me-west1 (Qatar)',
+    'global',
 ]
 OTHERS_REGION_LIST = [
 
@@ -279,7 +279,6 @@ def add_region(account_id):
         flash('Region added successfully!', 'success')
 
     return redirect(url_for('account_detail', account_id=account_id))
-
 
 AWS_SERVICE_TYPES = [
     'EC2',                 # Elastic Compute Cloud
@@ -410,7 +409,6 @@ OTHERS_SERVICE_TYPES = [
     'others',
 ]
 
-
 @app.route('/account/<int:account_id>/region/<int:region_id>')
 @login_required
 def region_detail(account_id, region_id):
@@ -521,7 +519,7 @@ def add_service(account_id, region_id):
         credentials=credentials,
         project_name=project_name  # Set the project name (optional)
     )
-    
+
     db.session.add(new_service)
     db.session.commit()
     flash('Service added successfully!', 'success')
@@ -547,8 +545,6 @@ def download(account_id):
                 'Credentials': service.credentials,
                 'status' : service.status,
             })
-    
-
     
     df = pd.DataFrame(data)
     output_file_name = f"{account.name}_services.xlsx"

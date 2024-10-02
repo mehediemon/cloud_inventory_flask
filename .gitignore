@@ -1,7 +1,7 @@
 # Python
 *.pyc
 *.pyo
-__pycache__/
+__pycache__
 *.pyd
 
 # Flask
@@ -27,6 +27,7 @@ nginx.conf
 # Uploads and database
 /uploads/
 Database/
+Downloads
 
 # System files
 .DS_Store
