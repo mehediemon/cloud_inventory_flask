@@ -75,7 +75,7 @@
                             <strong>Service Type:</strong> {{ service.type }}<br>
                             <strong>Account:</strong> {{ service.region.account.name }}<br>
                             <strong>Region:</strong> {{ service.region.name }}<br>
-                            <strong>Project Name:</strong> {{ service.project_name }}<br>  
+                            <strong>Project Name:</strong> {{ service.project.name if service.project else 'N/A' }}<br>  
                         </li>
                         {% endfor %}
                     </ul>
@@ -107,10 +107,43 @@
             </div>
         </div>
         {% endif %}
+
+        {% if projects %}
+        <div class="accordion-item">
+            <h3 class="accordion-header" id="headingProjects">
+                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseProjects" aria-expanded="false" aria-controls="collapseProjects" style="background-color: #38a3a5; color: white;">
+                    Projects ({{ projects|length }})
+                </button>
+            </h3>
+            <div id="collapseProjects" class="accordion-collapse collapse" aria-labelledby="headingProjects" data-bs-parent="#searchResultsAccordion">
+                <div class="accordion-body" style="max-height: 500px; overflow-y: auto;">
+                    <ul class="list-group">
+                        {% for project in projects %}
+                        <li class="list-group-item" style="border: 1px solid #ddd; margin-bottom: 10px; border-radius: 5px;">
+                            <strong>Project Name:</strong> {{ project.name }}<br>
+                            <strong>Services:</strong>
+                            <ul>
+                                {% for service in project.services %}
+                                <li>{{ service.name }} - {{ service.type }}</li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+        {% endif %}
     </div>
 
-    <div class="text-center mt-4">
+    <div class="d-flex text-center mt-4">
         <a href="{{ url_for('index') }}" class="btn btn-primary rounded-0" style="background-color: #38a3a5; border: none;">Back to Home</a>
+        <button type="button" class="btn btn-secondary rounded-0" onclick="goBack()">Previous Page</button>
     </div>
 </div>
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
 {% endblock %}

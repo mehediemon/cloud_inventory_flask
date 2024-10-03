@@ -8,3 +8,7 @@ services:
       dockerfile: ./Dockerfile
     ports:
       - 5000:5002
+    volumes:
+      - ./instance:/app/instance  # Change /app/data to your app's data directory
+
+    

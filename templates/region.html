@@ -1,13 +1,13 @@
 {% extends 'base.html' %}
 
-{% block title %}Account List{% endblock %}
+{% block title %}Add Service{% endblock %}
 
 {% block content %}
 <div class="row">
     <div class="col-md-4">
         <div class="card mb-4 rounded-0">
             <div class="text-center rounded-0">
-                <div class="card-header text-white rounded-0 " style="background-color: #38a3a5;">
+                <div class="card-header text-white rounded-0" style="background-color: #38a3a5;">
                     <h3>Account: {{ region.account.name }}</h3>
                 </div>
                 <div class="card-body rounded-0">
@@ -20,14 +20,19 @@
                 <h3>Add Services</h3>
             </div>
             <div class="card-body rounded-0">
-                <form method="POST" action="{{ url_for('add_service', account_id=account_id, region_id=region.id) }}"
-                    class="d-flex flex-column">
+                <form method="POST" action="{{ url_for('add_service', account_id=account_id, region_id=region.id) }}" class="d-flex flex-column">
+                    <!-- Project selection -->
                     <div class="row mb-3">
                         <div class="col">
-                            <input type="text" class="form-control rounded-0" name="project_name"
-                                placeholder="Project Name" required>
+                            <select class="form-control rounded-0" name="project_id" required>
+                                <option value="" disabled selected>Select a project</option>
+                                {% for project in projects %}
+                                    <option value="{{ project.id }}">{{ project.name }}</option>
+                                {% endfor %}
+                            </select>
                         </div>
                     </div>
+                    <!-- Other form fields -->
                     <div class="row mb-3">
                         <div class="col">
                             <select class="form-control rounded-0" name="service_type" id="service_type" required>
@@ -40,21 +45,17 @@
                     </div>
                     <div class="row mb-3">
                         <div class="col">
-                            <input type="text" class="form-control rounded-0" name="service_name"
-                                placeholder="Service Name" required>
+                            <input type="text" class="form-control rounded-0" name="service_name" placeholder="Service Name" required>
                         </div>
                     </div>
                     <div class="row mb-3">
                         <div class="col">
-                            <input type="text" class="form-control rounded-0" name="service_user" placeholder="User"
-                                required>
+                            <input type="text" class="form-control rounded-0" name="service_user" placeholder="User" required>
                         </div>
                     </div>
-
                     <div class="row mb-3">
                         <div class="col-md-8">
-                            <input type="text" class="form-control rounded-0" name="credentials"
-                                placeholder="Credentials" required>
+                            <input type="text" class="form-control rounded-0" name="credentials" placeholder="Credentials" required>
                         </div>
                         <div class="col-md-4">
                             <select class="form-control rounded-0" name="status" required>
@@ -68,45 +69,36 @@
                     </div>
                 </form>
             </div>
-
         </div>
         <div class="card mb-4 rounded-0">
-            <a href="{{ url_for('account_detail', account_id=account_id) }}"
-                class="btn btn-secondary  rounded-0  m-3">Back to
-                Region List</a>
+            <a href="{{ url_for('manage_projects') }}" class="btn btn-secondary rounded-0 m-3">Add Project</a>
+            <a href="{{ url_for('account_detail', account_id=account_id) }}" class="btn btn-secondary rounded-0 m-3">Back to Region List</a>
             <a href="{{ url_for('index') }}" class="btn btn-secondary rounded-0 m-3">Back to Home</a>
         </div>
-
     </div>
     <div class="col-md-8">
         <h3 class="text-center text-white p-3" style="background-color: #38a3a5;">Service List</h3>
         <div class="card mb-2 account-list rounded-0">
             <ul class="list-group" style="overflow-y: auto; max-height: 500px;">
                 {% for service in region.services %}
-                <li class="list-group-item d-flex justify-content-between align-items-center  rounded-0 m-1">
+                <li class="list-group-item d-flex justify-content-between align-items-center rounded-0 m-1">
                     <div class="row" style="width: 500px;">
                         <div class="col-md-6">
                             <strong>Service Type:</strong> {{ service.type }}<br>
                             <strong>Service Name:</strong> {{ service.name }}<br>
-                            <strong>Project:</strong> {{ service.project_name }}
+                            <strong>Project:</strong> {{ service.project.name }}
                         </div>
                         <div class="col-md-6">
                             <strong>User:</strong> {{ service.user }}<br>
                             <strong>Credentials:</strong> {{ service.credentials }}<br>
                             <strong>Status:</strong> {{ service.status }}
-
                         </div>
                     </div>
-                    <a href="{{ url_for('edit_service', account_id=account_id, region_id=region.id, service_id=service.id) }}"
-                        class="btn btn-warning btn-sm  rounded-0">Edit</a>
+                    <a href="{{ url_for('edit_service', account_id=account_id, region_id=region.id, service_id=service.id) }}" class="btn btn-warning btn-sm rounded-0">Edit</a>
                 </li>
                 {% endfor %}
             </ul>
         </div>
-
     </div>
-
 </div>
-
-
 {% endblock %}

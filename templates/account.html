@@ -56,6 +56,12 @@
 
     <div class="d-flex justify-content-center mt-4">
         <a href="{{ url_for('index') }}" class="btn btn-primary rounded-0">Back to Home</a>
+        <button type="button" class="btn btn-secondary rounded-0" onclick="goBack()">Previous Page</button>
     </div>
 </div>
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
 {% endblock %}

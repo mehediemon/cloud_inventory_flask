@@ -1,11 +1,11 @@
 import os
-from flask import Flask, current_app, render_template, request, redirect, url_for, flash, send_file, session
+from flask import Flask, current_app, jsonify, render_template, request, redirect, url_for, flash, send_file, session
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 import pandas as pd
 from datetime import timedelta, datetime, timezone
-from models import db, User, Account, Region, Service
+from models import Project, db, User, Account, Region, Service
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'your_secret_key'
@@ -17,9 +17,11 @@ login_manager.login_view = 'login'
 # Session timeout configuration
 SESSION_TIMEOUT = 15  # minutes
 
+
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, int(user_id))
+
 
 @app.before_request
 def before_request():
@@ -42,6 +44,7 @@ def before_request():
         # Store the current time as aware datetime
         session['last_activity'] = datetime.now(timezone.utc)
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -57,12 +60,14 @@ def login():
             flash('Invalid username or password', 'danger')
     return render_template('login.html')
 
+
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     session.pop('last_activity', None)  # Clear last activity
     return redirect(url_for('login'))
+
 
 @app.route('/')
 @login_required
@@ -82,6 +87,8 @@ def index():
     return render_template('index.html', accounts=accounts, providers=providers,
                            aws_account_count=aws_account_count, azure_account_count=azure_account_count, gcp_account_count=gcp_account_count, projects_count=projects_count,
                            other_account_count=other_account_count)
+
+
 # AWS Regions
 AWS_REGION_LIST = [
     'us-east-1 (N. Virginia)',
@@ -230,6 +237,7 @@ def account_detail(account_id):
 
     return render_template('account.html', account=account, regions=regions)
 
+
 @app.route('/add_account', methods=['POST'])
 @login_required
 def add_account():
@@ -269,6 +277,83 @@ def add_account():
     flash('Account added successfully!', 'success')
     return redirect(url_for('index'))
 
+
+@app.route('/projects', methods=['GET', 'POST'])
+@login_required
+def manage_projects():
+    if request.method == 'POST':
+        project_name = request.form['project_name']
+        
+        existing_project = Project.query.filter_by(name=project_name).first()
+        if existing_project:
+            flash('Project already exists.', 'danger')
+            return redirect(url_for('manage_projects'))
+
+        new_project = Project(name=project_name)
+        db.session.add(new_project)
+        db.session.commit()
+        flash('Project added successfully!', 'success')
+        return redirect(url_for('manage_projects'))
+
+    return render_template('projects.html')
+
+@app.route('/api/projects', methods=['GET'])
+@login_required
+def api_projects():
+    search_query = request.args.get('search', '').lower()
+    if search_query:
+        projects = Project.query.filter(Project.name.ilike(f'%{search_query}%')).all()
+    else:
+        projects = Project.query.all()
+    
+    project_list = [{
+        'id': project.id,
+        'name': project.name,
+        'service_count': Service.query.filter_by(project_id=project.id).count()
+    } for project in projects]
+
+    return jsonify(project_list)
+
+@app.route('/api/project/<int:project_id>', methods=['GET'])
+@login_required
+def api_project_services(project_id):
+    project = Project.query.get_or_404(project_id)
+    services = Service.query.filter_by(project_id=project.id).all()
+    
+    service_list = [{
+        'id': service.id,
+        'name': service.name,
+        'type': service.type,
+        'status': service.status
+    } for service in services]
+
+    return jsonify({
+        'project_name': project.name,
+        'services': service_list
+    })
+
+
+@app.route('/download_services/<int:project_id>')
+@login_required
+def download_services(project_id):
+    project = Project.query.get_or_404(project_id)
+    services = Service.query.filter_by(project_id=project.id).all()
+
+    # Create a DataFrame
+    df = pd.DataFrame([{
+        'Service Name': service.name,
+        'Service Type': service.type,
+        'Status': service.status,
+        'User': service.user,
+        'Credentials': service.credentials
+    } for service in services])
+
+    # Save to an Excel file
+    excel_file = f"{project.name}_services.xlsx"
+    df.to_excel(excel_file, index=False)
+
+    return send_file(excel_file, as_attachment=True)
+
 @app.route('/account/<int:account_id>/add_region', methods=['POST'])
 @login_required
 def add_region(account_id):
@@ -287,6 +372,7 @@ def add_region(account_id):
         flash('Region added successfully!', 'success')
 
     return redirect(url_for('account_detail', account_id=account_id))
+
 
 AWS_SERVICE_TYPES = [
     'EC2',                 # Elastic Compute Cloud
@@ -417,6 +503,7 @@ OTHERS_SERVICE_TYPES = [
     'others',
 ]
 
+
 @app.route('/account/<int:account_id>/region/<int:region_id>')
 @login_required
 def region_detail(account_id, region_id):
@@ -434,8 +521,9 @@ def region_detail(account_id, region_id):
         services = OTHERS_SERVICE_TYPES
     else:
         services = []  # Default to an empty list if provider is unknown
+    projects = Project.query.all()
+    return render_template('region.html', region=region, account_id=account_id, services=services, projects=projects)
 
-    return render_template('region.html', region=region, account_id=account_id, services=services)
 
 @app.route('/edit_account/<int:account_id>', methods=['GET', 'POST'])
 @login_required
@@ -473,6 +561,7 @@ def edit_account(account_id):
 
     return render_template('edit_account.html', account=account, providers=providers)
 
+
 @app.route('/edit_service/<int:service_id>', methods=['GET', 'POST'])
 @login_required
 def edit_service(service_id):
@@ -480,6 +569,7 @@ def edit_service(service_id):
 
     # Get the account associated with the service
     account = Account.query.get(service.account_id)
+    projects = Project.query.all()
 
     # Determine the service list based on the account provider
     if account.provider_name == 'AWS':
@@ -494,46 +584,53 @@ def edit_service(service_id):
         service_types = []  # Default to an empty list if provider is unknown
 
     if request.method == 'POST':
+        service.project_id = request.form['project_id']
         service.name = request.form['service_name']
         service.type = request.form['service_type']
         service.user = request.form['service_user']
         service.credentials = request.form['credentials']
-        service.project_name = request.form['project_name']
         service.status = request.form['status']
         db.session.commit()
         flash('Service updated successfully!', 'success')
         return redirect(url_for('region_detail', account_id=service.region.account_id, region_id=service.region.id))
 
-    return render_template('edit_service.html', service=service, account_id=service.region.account_id, region_id=service.region.id, service_types=service_types)
+    
+    return render_template('edit_service.html', service=service, account_id=service.region.account_id, region_id=service.region.id, service_types=service_types, projects=projects)
 
 
-@app.route('/account/<int:account_id>/region/<int:region_id>/add_service', methods=['POST'])
+@app.route('/account/<int:account_id>/region/<int:region_id>/add_service', methods=['GET', 'POST'])
 @login_required
 def add_service(account_id, region_id):
-    name = request.form['service_name']
-    service_type = request.form['service_type']
-    user = request.form['service_user']
-    credentials = request.form['credentials']
-    status = request.form['status']
-    # Get project name from the form (optional)
-    project_name = request.form.get('project_name')
+    if request.method == 'POST':
+        name = request.form['service_name']
+        service_type = request.form['service_type']
+        user = request.form['service_user']
+        credentials = request.form['credentials']
+        status = request.form['status']
+        
+        # Get the selected project ID
+        project_id = request.form.get('project_id')
 
-    # Create the new service
-    new_service = Service(
-        name=name,
-        type=service_type,
-        user=user,
-        region_id=region_id,
-        account_id=account_id,
-        status=status,
-        credentials=credentials,
-        project_name=project_name  # Set the project name (optional)
-    )
+        # Create the new service
+        new_service = Service(
+            name=name,
+            type=service_type,
+            user=user,
+            region_id=region_id,
+            account_id=account_id,
+            status=status,
+            credentials=credentials,
+            project_id=project_id  # Associate the service with the selected project
+        )
 
-    db.session.add(new_service)
-    db.session.commit()
-    flash('Service added successfully!', 'success')
-    return redirect(url_for('region_detail', account_id=account_id, region_id=region_id))
+        db.session.add(new_service)
+        db.session.commit()
+        flash('Service added successfully!', 'success')
+        return redirect(url_for('region_detail', account_id=account_id, region_id=region_id))
+
+    # Fetch projects to display in the form
+    projects = Project.query.all()
+    return render_template('add_service.html', account_id=account_id, region_id=region_id, projects=projects)
 
 
 @app.route('/download/<int:account_id>')
@@ -549,7 +646,7 @@ def download(account_id):
                 'Region': region.name,
                 'Service': service.type,
                 'Service Name': service.name,
-                'Project': service.project_name,
+                'Project': service.project.name,
                 'User': service.user,
                 'Credentials': service.credentials,
                 'status': service.status,
@@ -563,6 +660,7 @@ def download(account_id):
     df.to_excel(output_file, index=False)
 
     return send_file(output_file, as_attachment=True)
+
 
 @app.route('/download_all')
 @login_required
@@ -580,12 +678,12 @@ def download_all():
                     'Region': region.name,
                     'Service Type': service.type,
                     'Service Name': service.name,
-                    'Project Name': service.project_name,
+                    'Project Name': service.project.name,
                     'User': service.user,
                     'Credentials': service.credentials,
                     'status': service.status,
                 })
-                
+
     df = pd.DataFrame(data)
     output_dir = os.path.join(current_app.root_path, 'downloads')
     output_file = os.path.join(output_dir, "all_accounts_services.xlsx")
@@ -608,6 +706,7 @@ def change_password():
         return redirect(url_for('index'))
     return render_template('change_password.html')
 
+
 @app.route('/search', methods=['GET'])
 @login_required
 def search():
@@ -622,11 +721,11 @@ def search():
     # Searching regions
     regions = Region.query.filter(Region.name.ilike(f'%{query}%')).all()
 
+    projects = Project.query.filter(Project.name.ilike(f'%{query}%')).all()
+
     # Searching services
     services = Service.query.filter(
-        (Service.name.ilike(f'%{query}%')) |
-        # Add search for project_name
-        (Service.project_name.ilike(f'%{query}%'))
+        (Service.name.ilike(f'%{query}%')) 
     ).all()
     # Searching service types
     matched_services_by_type = Service.query.filter(
@@ -637,9 +736,11 @@ def search():
         accounts=accounts,
         regions=regions,
         services=services,
+        projects=projects,
         matched_services_by_type=matched_services_by_type,
         query=query
     )
+
 
 if __name__ == '__main__':
     with app.app_context():
