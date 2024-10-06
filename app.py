@@ -76,17 +76,41 @@ def index():
     services = Service.query.all()
     providers = ['AWS', 'Azure', 'GCP', 'OTHERS']  # Hard-coded providers
 
-    projects_count = Service.query.filter_by(status='active').count()
+    service_count = Service.query.filter_by(status='active').count()
     gcp_account_count = Account.query.filter_by(provider_name='GCP').count()
     aws_account_count = Account.query.filter_by(provider_name='AWS').count()
     azure_account_count = Account.query.filter_by(
         provider_name='Azure').count()
     other_account_count = len(accounts) - aws_account_count - \
-        azure_account_count - gcp_account_count  # Calculate remaining
+        azure_account_count - gcp_account_count
 
     return render_template('index.html', accounts=accounts, providers=providers,
-                           aws_account_count=aws_account_count, azure_account_count=azure_account_count, gcp_account_count=gcp_account_count, projects_count=projects_count,
+                           aws_account_count=aws_account_count, azure_account_count=azure_account_count,
+                           gcp_account_count=gcp_account_count, service_count=service_count,
                            other_account_count=other_account_count)
+
+
+@app.route('/api/accounts', methods=['GET'])
+@login_required
+def api_accounts():
+    search_query = request.args.get('search', '').strip()
+    accounts_query = Account.query
+
+    if search_query:
+        accounts_query = accounts_query.filter(
+            Account.name.ilike(f'%{search_query}%'))
+
+    accounts = accounts_query.order_by(Account.provider_name).all()
+
+    account_list = [{
+        'id': account.id,
+        'name': account.name,
+        'account_id': account.account_id,
+        'email': account.email,
+        'provider_name': account.provider_name
+    } for account in accounts]
+
+    return jsonify(account_list)
 
 
 # AWS Regions
@@ -283,7 +307,7 @@ def add_account():
 def manage_projects():
     if request.method == 'POST':
         project_name = request.form['project_name']
-        
+
         existing_project = Project.query.filter_by(name=project_name).first()
         if existing_project:
             flash('Project already exists.', 'danger')
@@ -297,15 +321,17 @@ def manage_projects():
 
     return render_template('projects.html')
 
+
 @app.route('/api/projects', methods=['GET'])
 @login_required
 def api_projects():
     search_query = request.args.get('search', '').lower()
     if search_query:
-        projects = Project.query.filter(Project.name.ilike(f'%{search_query}%')).all()
+        projects = Project.query.filter(
+            Project.name.ilike(f'%{search_query}%')).all()
     else:
         projects = Project.query.all()
-    
+
     project_list = [{
         'id': project.id,
         'name': project.name,
@@ -314,17 +340,19 @@ def api_projects():
 
     return jsonify(project_list)
 
+
 @app.route('/api/project/<int:project_id>', methods=['GET'])
 @login_required
 def api_project_services(project_id):
     project = Project.query.get_or_404(project_id)
     services = Service.query.filter_by(project_id=project.id).all()
-    
+
     service_list = [{
         'id': service.id,
         'name': service.name,
         'type': service.type,
-        'status': service.status
+        'status': service.status,
+        'provider': service.region.account.provider_name
     } for service in services]
 
     return jsonify({
@@ -353,6 +381,7 @@ def download_services(project_id):
     df.to_excel(excel_file, index=False)
 
     return send_file(excel_file, as_attachment=True)
+
 
 @app.route('/account/<int:account_id>/add_region', methods=['POST'])
 @login_required
@@ -594,7 +623,6 @@ def edit_service(service_id):
         flash('Service updated successfully!', 'success')
         return redirect(url_for('region_detail', account_id=service.region.account_id, region_id=service.region.id))
 
-    
     return render_template('edit_service.html', service=service, account_id=service.region.account_id, region_id=service.region.id, service_types=service_types, projects=projects)
 
 
@@ -607,7 +635,7 @@ def add_service(account_id, region_id):
         user = request.form['service_user']
         credentials = request.form['credentials']
         status = request.form['status']
-        
+
         # Get the selected project ID
         project_id = request.form.get('project_id')
 
@@ -725,7 +753,7 @@ def search():
 
     # Searching services
     services = Service.query.filter(
-        (Service.name.ilike(f'%{query}%')) 
+        (Service.name.ilike(f'%{query}%'))
     ).all()
     # Searching service types
     matched_services_by_type = Service.query.filter(
