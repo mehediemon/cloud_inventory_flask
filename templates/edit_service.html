@@ -5,12 +5,19 @@
 {% block content %}
 <div class="container mt-4">
     <h2 class="mb-4">Edit Service: {{ service.name }}</h2>
-    <form method="POST">
+    <form id="serviceForm" method="POST" class="shadow p-4 rounded bg-light">
+        
+        <!-- Toggle Switch -->
+        <div class="mb-3 form-check form-switch">
+            <input class="form-check-input" type="checkbox" id="editToggle" onchange="toggleEditMode()">
+            <label class="form-check-label" for="editToggle">Edit Mode</label>
+        </div>
+        
         <div class="card rounded-0 shadow">
             <div class="card-body">
                 <div class="form-group mb-3">
                     <label for="project_id" class="form-label">Project</label>
-                    <select class="form-control rounded-0" name="project_id" required>
+                    <select class="form-control rounded-0" name="project_id" required disabled>
                         <option value="" disabled selected>Select a project</option>
                         {% for project in projects %}
                             <option value="{{ project.id }}" {% if service.project_id == project.id %}selected{% endif %}>{{ project.name }}</option>
@@ -19,11 +26,11 @@
                 </div>
                 <div class="form-group mb-3">
                     <label for="service_name" class="form-label">Service Name</label>
-                    <input type="text" class="form-control rounded-0" name="service_name" value="{{ service.name }}" required>
+                    <input type="text" class="form-control rounded-0" name="service_name" value="{{ service.name }}" required disabled>
                 </div>
                 <div class="form-group mb-3">
                     <label for="service_type" class="form-label">Service Type</label>
-                    <select class="form-select rounded-0" name="service_type" required>
+                    <select class="form-select rounded-0" name="service_type" required disabled>
                         {% for type in service_types %}
                             <option value="{{ type }}" {% if service.type == type %}selected{% endif %}>{{ type }}</option>
                         {% endfor %}
@@ -31,21 +38,23 @@
                 </div>
                 <div class="form-group mb-3">
                     <label for="service_user" class="form-label">User</label>
-                    <input type="text" class="form-control rounded-0" name="service_user" value="{{ service.user }}" required>
+                    <input type="text" class="form-control rounded-0" name="service_user" value="{{ service.user }}" required disabled>
                 </div>
-
                 <div class="form-group mb-3">
                     <label for="credentials" class="form-label">Credentials</label>
-                    <input type="text" class="form-control rounded-0" name="credentials" value="{{ service.credentials }}" required>
+                    <input type="text" class="form-control rounded-0" name="credentials" value="{{ service.credentials }}" required disabled>
                 </div>
                 <div class="form-group mb-4">
                     <label for="status" class="form-label">Status</label>
-                    <select class="form-select rounded-0" name="status" required>
+                    <select class="form-select rounded-0" name="status" required disabled>
                         <option value="active" {% if service.status == 'active' %}selected{% endif %}>Active</option>
                         <option value="inactive" {% if service.status == 'inactive' %}selected{% endif %}>Inactive</option>
                     </select>
                 </div>
-                <button type="submit" class="btn btn-primary rounded-0">Update Service</button>
+                <div class="form-group mb-4">
+                    <textarea class="form-control" name="description" id="description" rows="5" disabled>{{ service.description }}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary rounded-0" disabled>Update Service</button>
                 <button type="button" class="btn btn-secondary rounded-0" onclick="goBack()">Cancel</button>
             </div>
         </div>
@@ -53,8 +62,36 @@
 </div>
 
 <script>
+    function toggleEditMode() {
+        const form = document.getElementById('serviceForm');
+        const button = form.querySelector('button[type="submit"]');
+        const isEditMode = document.getElementById('editToggle').checked;
+
+        // Only toggle specific fields
+        const editableFields = form.querySelectorAll(
+            'select[name="project_id"], input[name="service_name"], input[name="service_user"], input[name="credentials"], select[name="service_type"], select[name="status"], textarea[name="description"]'
+        );
+
+        editableFields.forEach(input => {
+            input.disabled = !isEditMode;
+        });
+
+        button.disabled = !isEditMode; // Enable the submit button in edit mode
+    }
+
     function goBack() {
+    // Get the stored previous page URL
+    const previousUrl = sessionStorage.getItem('previousPage');
+    
+    if (previousUrl) {
+        // Redirect to the previous page and force a reload
+        window.location.href = previousUrl;
+        // Optionally, clear the sessionStorage if you don't want to keep it
+        sessionStorage.removeItem('previousPage');
+    } else {
+        // Fallback to going back in history if no previous URL is found
         window.history.back();
     }
+}
 </script>
 {% endblock %}

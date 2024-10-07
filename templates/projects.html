@@ -104,7 +104,18 @@
     loadProjects();
     
     function goBack() {
+    // Get the stored previous page URL
+    const previousUrl = sessionStorage.getItem('previousPage');
+    
+    if (previousUrl) {
+        // Redirect to the previous page and force a reload
+        window.location.href = previousUrl;
+        // Optionally, clear the sessionStorage if you don't want to keep it
+        sessionStorage.removeItem('previousPage');
+    } else {
+        // Fallback to going back in history if no previous URL is found
         window.history.back();
     }
+}
 </script>
 {% endblock %}

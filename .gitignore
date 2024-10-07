@@ -29,6 +29,7 @@ nginx.conf
 /uploads/
 Database/
 Downloads
+downloads
 
 # System files
 .DS_Store

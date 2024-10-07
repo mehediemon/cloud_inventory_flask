@@ -376,11 +376,13 @@ def download_services(project_id):
         'Credentials': service.credentials
     } for service in services])
 
-    # Save to an Excel file
-    excel_file = f"{project.name}_services.xlsx"
-    df.to_excel(excel_file, index=False)
+    output_file_name = f"{project.name}_services.xlsx"
+    output_dir = os.path.join(current_app.root_path, 'downloads')
+    output_file = os.path.join(output_dir, output_file_name)
+    os.makedirs(output_dir, exist_ok=True)
+    df.to_excel(output_file, index=False)
 
-    return send_file(excel_file, as_attachment=True)
+    return send_file(output_file, as_attachment=True)
 
 
 @app.route('/account/<int:account_id>/add_region', methods=['POST'])
@@ -619,6 +621,7 @@ def edit_service(service_id):
         service.user = request.form['service_user']
         service.credentials = request.form['credentials']
         service.status = request.form['status']
+        service.description = request.form['description']
         db.session.commit()
         flash('Service updated successfully!', 'success')
         return redirect(url_for('region_detail', account_id=service.region.account_id, region_id=service.region.id))
@@ -635,6 +638,7 @@ def add_service(account_id, region_id):
         user = request.form['service_user']
         credentials = request.form['credentials']
         status = request.form['status']
+        description = request.form['description']
 
         # Get the selected project ID
         project_id = request.form.get('project_id')
@@ -648,6 +652,7 @@ def add_service(account_id, region_id):
             account_id=account_id,
             status=status,
             credentials=credentials,
+            description=description,
             project_id=project_id  # Associate the service with the selected project
         )
 
