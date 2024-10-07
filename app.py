@@ -406,42 +406,46 @@ def add_region(account_id):
 
 
 AWS_SERVICE_TYPES = [
-    'EC2',                 # Elastic Compute Cloud
-    'SNS',                 # Simple Notification Service
-    'SES',                 # Simple Email Service
-    'ELB',                 # Elastic Load Balancing
-    'Lambda',              # Serverless compute service
-    'WAF',                 # Web Application Firewall
-    'RDS',                 # Relational Database Service
-    'S3',                  # Simple Storage Service
-    'DynamoDB',            # NoSQL database service
-    'CloudFront',          # Content Delivery Network (CDN)
-    'SQS',                 # Simple Queue Service
     'API Gateway',         # API management service
-    'CloudFormation',      # Infrastructure as Code
-    'CloudWatch',          # Monitoring and observability
-    'Elastic Beanstalk',   # PaaS for deploying applications
-    'ECS',                 # Elastic Container Service
-    'EKS',                 # Elastic Kubernetes Service
-    'Route 53',            # DNS service
-    'IAM',                 # Identity and Access Management
-    'Cognito',             # User identity service
-    'Elasticache',         # In-memory caching
-    'Redshift',            # Data warehousing
-    'Athena',              # Interactive query service
-    'Glue',                # Data integration service
-    'AppSync',             # GraphQL API service
-    'CloudTrail',          # Governance and compliance
-    'Step Functions',      # Orchestration service
-    'RoboMaker',           # Robotics service
-    'DMS',                 # Database Migration Service
-    'Snowball',            # Data transport solution
-    'EFS',                 # Elastic File System
-    'FSx',                 # File system service
-    'DocumentDB',          # Managed document database
     'AppStream',           # Application streaming service
+    'AppSync',             # GraphQL API service
+    'Athena',              # Interactive query service
+    'CloudFormation',      # Infrastructure as Code
+    'CloudTrail',          # Governance and compliance
+    'CloudWatch',          # Monitoring and observability
+    'CloudFront',          # Content Delivery Network (CDN)
+    'DMS',                 # Database Migration Service
+    'DocumentDB',          # Managed document database
+    'DynamoDB',            # NoSQL database service
+    'ECS',                 # Elastic Container Service
+    'EFS',                 # Elastic File System
+    'Elastic Beanstalk',   # PaaS for deploying applications
+    'Elastic IP',          # Elastic ipv4
+    'Elasticache',         # In-memory caching
+    'ELB',                 # Elastic Load Balancing
+    'EKS',                 # Elastic Kubernetes Service
+    'ECR',                 # Elastic Container Registry
+    'FSx',                 # File system service
+    'Glue',                # Data integration service
+    'IAM',                 # Identity and Access Management
+    'Lambda',              # Serverless compute service
     'QuickSight',          # Business analytics service
+    'Redshift',            # Data warehousing
+    'Route 53',            # DNS service
+    'S3',                  # Simple Storage Service
+    'SES',                 # Simple Email Service
+    'SQS',                 # Simple Queue Service
+    'Snowball',            # Data transport solution
+    'Step Functions',      # Orchestration service
+    'VPC',                 # Virtual private cloud
+    'WAF',                 # Web Application Firewall
+    'CodeDeploy',          # Automates code deployments
+    'CodePipeline',        # CI/CD service for fast delivery
+    'CodeBuild',          # Builds code and runs tests
+    'Service Catalog',     # Create and manage catalogs of IT services
+    'X-Ray',               # Debugging and analyzing applications
 ]
+
 AZURE_SERVICE_TYPES = [
     'Virtual Machines',           # Compute service
     'App Services',               # Platform as a Service
