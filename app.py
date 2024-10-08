@@ -376,7 +376,7 @@ def download_services(project_id):
         'Credentials': service.credentials
     } for service in services])
 
-    output_file_name = f"{project.name}_services.xlsx"
+    output_file_name = f"{project.name}_all_services.xlsx"
     output_dir = os.path.join(current_app.root_path, 'downloads')
     output_file = os.path.join(output_dir, output_file_name)
     os.makedirs(output_dir, exist_ok=True)
