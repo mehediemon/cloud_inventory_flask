@@ -1,26 +1,38 @@
 {% extends 'base.html' %}
 
 {% block title %}Add Service{% endblock %}
+{% block headnav %}
+
+<div class="navbar rounded-0 p-3 " style="background-color: #2c3e50;">
+
+    <div>
+        <h4>Account: {{ region.account.name }}</h4>
+        <h5>Region: {{ region.name }}</h5>
+    </div>
+    
+    <div class=" d-flex rounded-0 justify-content-end">
+        <a href="{{ url_for('account_detail', account_id=account_id) }}" class="btn btn-secondary rounded-0">Back to
+            Region List</a>
+        <a href="{{ url_for('index') }}" class="btn btn-primary rounded-0">Back to Home</a>
+    </div>
+</div>
+
+
+
+{% endblock %}
 
 {% block content %}
+
 <div class="row">
     <div class="col-md-4">
+
         <div class="card mb-4 rounded-0">
-            <div class="text-center rounded-0">
-                <div class="card-header text-white rounded-0" style="background-color: #38a3a5;">
-                    <h3>Account: {{ region.account.name }}</h3>
-                </div>
-                <div class="card-body rounded-0">
-                    <h5>Region: {{ region.name }}</h5>
-                </div>
-            </div>
-        </div>
-        <div class="card mb-4 rounded-0">
-            <a href="{{ url_for('manage_projects') }}" class="btn btn-secondary rounded-0" onclick="setPreviousPage()">Add Project</a>
+            <a href="{{ url_for('manage_projects') }}" class="btn btn-primary rounded-0 p-3"
+                onclick="setPreviousPage()">Add Project</a>
         </div>
         <div class="card rounded-0">
             <div class="card-header text-center text-white rounded-0" style="background-color: #38a3a5;">
-                <h3>Add Services</h3>
+                <h4>Add Services</h4>
             </div>
             <div class="card-body rounded-0">
                 <form method="POST" action="{{ url_for('add_service', account_id=account_id, region_id=region.id) }}"
@@ -74,9 +86,10 @@
                     </div>
                     <div class="row mb-1">
                         <div class="col">
-                            <textarea class="form-control" name="description" placeholder="Description" id="" rows="7"></textarea>
+                            <textarea class="form-control" name="description" placeholder="Description" id=""
+                                rows="7"></textarea>
                         </div>
-                        
+
                     </div>
                     <div class="text-end">
                         <button type="submit" class="btn btn-primary rounded-0" style="width: 100%;">Add
@@ -88,7 +101,7 @@
 
     </div>
     <div class="col-md-8">
-        <h3 class="text-center text-white p-3" style="background-color: #38a3a5;">Service List</h3>
+        <h4 class="text-center text-white p-3" style="background-color: #38a3a5;">Service List</h4>
         <div class="card mb-2 account-list rounded-0">
             <ul class="list-group" style="overflow-y: auto; max-height: 500px;">
                 {% for service in region.services %}
@@ -111,11 +124,7 @@
                 {% endfor %}
             </ul>
         </div>
-        <div class="d-flex card justify-content-center rounded-0">
-            <a href="{{ url_for('account_detail', account_id=account_id) }}"
-                class="btn btn-secondary rounded-0">Back to Region List</a>
-            <a href="{{ url_for('index') }}" class="btn btn-primary rounded-0">Back to Home</a>
-        </div>
+
     </div>
 </div>
 
@@ -124,5 +133,5 @@
         // Store the URL of Page 1 in sessionStorage
         sessionStorage.setItem('previousPage', window.location.href);
     }
-    </script>
+</script>
 {% endblock %}
