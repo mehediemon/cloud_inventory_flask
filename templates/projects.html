@@ -4,7 +4,7 @@
 
 {% block headnav %}
 
-<div class="navbar rounded-0 p-3 " style="background-color: #2c3e50;">
+<div class="navbar shadow rounded-0 p-3 " style="background-color: #294867; border: none;">
 
     <div>
         <h4>Manage projects</h4>
@@ -25,9 +25,9 @@
 
     <div class="row">
         <div class="col-md-4">
-            <div class="card mb-4 rounded-0">
-                <div class="card-header text-white rounded-0" style="background-color: #38a3a5;">
-                    <h5>Add New Project</h5>
+            <div class="card mb-4 shadow rounded-0" style="border: none;">
+                <div class="card-header  text-white rounded-0" style="background-color: #38a3a5;">
+                    <h5 class="pt-2">Add New Project</h5>
                 </div>
                 <div class="card-body">
                     <form method="POST" class="d-flex rounded-0" action="{{ url_for('manage_projects') }}">
@@ -37,9 +37,9 @@
                 </div>
             </div>
 
-            <div class="card rounded-0">
+            <div class="card shadow rounded-0" style="border: none;">
                 <div class="card-header text-white rounded-0" style="background-color: #38a3a5;">
-                    <h5>Existing Projects</h5>
+                    <h5 class="pt-2">Existing Projects</h5>
                 </div>
                 <div class="card-body rounded-0">
                     <input type="text" id="search" class="form-control mb-3 rounded-0" placeholder="Search Projects">
@@ -83,9 +83,9 @@
         .then(data => {
             const servicesContainer = document.getElementById('servicesContainer');
             servicesContainer.innerHTML = `
-                <div class="card mb-4 rounded-0">
-                    <div class="card-header text-white rounded-0" style="background-color: #38a3a5;">
-                        <h5>Services for ${data.project_name} (${data.services.length})</h5>
+                <div class="card mb-4 shadow rounded-0" style="border: none;">
+                    <div class="card-header text-white rounded-0 " style="background-color: #38a3a5;">
+                        <h5 class="pt-2">Services for ${data.project_name} (${data.services.length})</h5>
                     </div>
                     <div class="card-body rounded-0">
                         <ul class="list-group rounded-0">

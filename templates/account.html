@@ -4,7 +4,7 @@
 
 {% block headnav %}
 
-<div class="navbar rounded-0 p-3 " style="background-color: #2c3e50;">
+<div class="navbar rounded-0 p-3 shadow" style="background-color: #294867;">
 
     <div>
         <h5>Account Name: {{ account.name }}</h5>
@@ -16,7 +16,7 @@
         <button type="button" class="btn btn-secondary rounded-0" onclick="goBack()">Previous Page</button>
     </div>
 </div>
-<div class="navbar mb-3 p-3 justify-content-between" style="background-color: #38a3a5;">
+<div class="navbar shadow mb-3 p-3 justify-content-between" style="background-color: #38a3a5;">
 
     <h4 class="text-white">Regions List:</h4>
 
@@ -39,7 +39,7 @@
 <div class="row row-cols-1 row-cols-md-3 g-3" style="max-height: 500px; overflow-y: auto;">
     {% for region in account.regions %}
     <div class="col mb-4">
-        <div class="card border-success p-3 rounded-0" style="background-color: #f8f9fa;">
+        <div class="card shadow p-4 rounded-0" style="background-color: #f8f9fa; border: none;">
             <a href="{{ url_for('region_detail', account_id=account.id, region_id=region.id) }}"
                 class="text-decoration-none text-dark">
                 <div class="d-flex align-items-center">
