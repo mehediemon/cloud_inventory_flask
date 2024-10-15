@@ -417,6 +417,7 @@ AWS_SERVICE_TYPES = [
     'DMS',                 # Database Migration Service
     'DocumentDB',          # Managed document database
     'DynamoDB',            # NoSQL database service
+    'EC2',                 # Elastic Container Service
     'ECS',                 # Elastic Container Service
     'EFS',                 # Elastic File System
     'Elastic Beanstalk',   # PaaS for deploying applications

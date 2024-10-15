@@ -49,3 +49,5 @@ class Service(db.Model):
     project_id = db.Column(db.Integer, db.ForeignKey(
         'project.id'), nullable=True)  # New column
     description = db.Column(db.Text, nullable=True)
+
+
